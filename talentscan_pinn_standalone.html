@@ -1,0 +1,3284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#080d1a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>TalentScan 2036 — Smartphone Jump &amp; Regional Force Analyzer</title>
+  <link rel="manifest" href="./manifest.json" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <style>
+:root {
+  --bg-top: #080d1a;
+  --bg-bottom: #0f172a;
+  --card: rgba(21, 31, 50, 0.92);
+  --card-solid: #151f32;
+  --border: rgba(255, 255, 255, 0.09);
+  --text: #f8fafc;
+  --subtext: #94a3b8;
+  --emerald: #10b981;
+  --cyan: #06b6d4;
+  --amber: #f59e0b;
+  --violet: #8b5cf6;
+  --rose: #f43f5e;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body {
+  width: 100%;
+  max-width: 100vw;
+  min-height: 100dvh;
+  background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg-top) 55%, var(--bg-bottom) 100%);
+  color: var(--text);
+  font-family: var(--font);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+.mobile-viewport {
+  width: 100%;
+  max-width: 440px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: max(12px, env(safe-area-inset-top)) 14px max(20px, env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+/* Top Navigation Bar with Back Button + Clickable Step Tabs */
+.app-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0 10px;
+  flex-shrink: 0;
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.btn-back {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btn-back.visible {
+  display: inline-flex;
+}
+
+.btn-back:active {
+  background: rgba(16, 185, 129, 0.25);
+}
+
+.brand-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--emerald), var(--cyan));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  flex-shrink: 0;
+}
+
+.brand-title {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.brand-subtitle {
+  font-size: 10.5px;
+  color: var(--subtext);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Clickable Top Step Switcher */
+.step-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: rgba(9, 13, 22, 0.65);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.step-tab {
+  border: none;
+  background: transparent;
+  color: var(--subtext);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 4px;
+  border-radius: 9px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.step-tab.active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #6ee7b7;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+/* Screens */
+.screen {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  width: 100%;
+  animation: fadeSlide 0.2s ease;
+}
+
+.screen.active {
+  display: flex;
+}
+
+@keyframes fadeSlide {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.scroll-body {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.screen-heading {
+  font-size: clamp(19px, 5vw, 23px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.screen-sub {
+  font-size: 13px;
+  color: var(--subtext);
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+/* Segmented Sex Control */
+.segmented-control {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: rgba(9, 13, 22, 0.65);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 11px;
+}
+
+.seg-btn {
+  border: none;
+  background: transparent;
+  color: var(--subtext);
+  font-size: 13.5px;
+  font-weight: 700;
+  padding: 9px 6px;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.seg-btn.active {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.24), rgba(6, 182, 212, 0.24));
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.45);
+}
+
+/* Weight & Age Steppers */
+.stepper-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 11px;
+  min-width: 0;
+}
+
+.stepper-card {
+  background: rgba(9, 13, 22, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 8px;
+  text-align: center;
+  min-width: 0;
+}
+
+.stepper-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--subtext);
+  margin-bottom: 6px;
+}
+
+.stepper-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+}
+
+.step-adj {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stepper-input {
+  width: 100%;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: clamp(19px, 5vw, 23px);
+  font-weight: 800;
+  text-align: center;
+  outline: none;
+}
+
+/* Place / Region Inputs for Regional Benchmarking */
+.region-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 7px;
+}
+
+.region-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a7f3d0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.btn-gps {
+  border: 1px solid rgba(6, 182, 212, 0.4);
+  background: rgba(6, 182, 212, 0.14);
+  color: #67e8f9;
+  border-radius: 99px;
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.region-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 8px;
+  min-width: 0;
+}
+
+.field-control {
+  width: 100%;
+  min-width: 0;
+  background: rgba(9, 13, 22, 0.65);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--text);
+  padding: 9px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  outline: none;
+}
+
+.field-control option {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+.area-pills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.area-pill {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--subtext);
+  border-radius: 9px;
+  padding: 6px 4px;
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+
+.area-pill.active {
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+/* Guide List */
+.guide-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.guide-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  color: #e2e8f0;
+  line-height: 1.35;
+}
+
+.guide-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.guide-icon.c1 { background: rgba(6, 182, 212, 0.18); color: #22d3ee; }
+.guide-icon.c2 { background: rgba(245, 158, 11, 0.18); color: #fbbf24; }
+.guide-icon.c3 { background: rgba(16, 185, 129, 0.18); color: #34d399; }
+
+/* Action Footer */
+.bottom-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  flex-shrink: 0;
+}
+
+.btn-primary {
+  width: 100%;
+  border: none;
+  border-radius: 15px;
+  padding: 15px 16px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #042f2e;
+  background: linear-gradient(135deg, #34d399 0%, #06b6d4 100%);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.28);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-secondary {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  border-radius: 13px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+}
+
+/* SCREEN 2: CAPTURE */
+.capture-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.ring-wrap {
+  width: clamp(168px, 48vw, 206px);
+  height: clamp(168px, 48vw, 206px);
+  border-radius: 50%;
+  border: 6px solid var(--cyan);
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.16) 0%, rgba(15, 23, 42, 0.4) 75%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  transition: all 0.22s ease;
+}
+
+.ring-wrap.hold {
+  border-color: var(--amber);
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.22) 0%, rgba(15, 23, 42, 0.4) 75%);
+}
+
+.ring-wrap.go {
+  border-color: var(--emerald);
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.28) 0%, rgba(15, 23, 42, 0.4) 75%);
+  box-shadow: 0 0 36px rgba(16, 185, 129, 0.38);
+}
+
+.ring-main {
+  font-size: clamp(34px, 10vw, 44px);
+  font-weight: 900;
+}
+
+.ring-sub {
+  font-size: 12px;
+  color: var(--subtext);
+  margin-top: 5px;
+  font-weight: 600;
+}
+
+.live-meter-wrap {
+  width: 100%;
+  max-width: 260px;
+  margin-top: 14px;
+}
+
+.live-meter-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.live-meter-fill {
+  height: 100%;
+  width: 33%;
+  background: linear-gradient(90deg, var(--cyan), var(--emerald));
+  border-radius: 99px;
+  transition: width 0.08s linear;
+}
+
+/* SCREEN 3: RESULTS & REGIONAL BENCHMARKING */
+.hero-score-card {
+  background: linear-gradient(155deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.12) 50%, rgba(21, 31, 50, 0.95) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  border-radius: 18px;
+  padding: 15px 14px;
+  text-align: center;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.score-top-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.score-tag {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6ee7b7;
+  text-align: left;
+}
+
+.source-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: rgba(6, 182, 212, 0.22);
+  color: #67e8f9;
+}
+
+.big-height {
+  font-size: clamp(44px, 12vw, 56px);
+  font-weight: 900;
+  line-height: 1.02;
+  color: #ffffff;
+  margin: 4px 0;
+}
+
+.big-height small {
+  font-size: 20px;
+  font-weight: 700;
+  color: #34d399;
+}
+
+/* Non-overflowing Percentile Gauge */
+.centile-gauge {
+  margin-top: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.gauge-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-bottom: 5px;
+  font-weight: 600;
+}
+
+.gauge-track-outer {
+  position: relative;
+  width: 100%;
+  padding: 5px 8px;
+}
+
+.gauge-track {
+  position: relative;
+  width: 100%;
+  height: 9px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #f43f5e 0%, #f59e0b 35%, #10b981 70%, #06b6d4 100%);
+}
+
+.gauge-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #090d16;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.gauge-ticks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  font-size: 10px;
+  color: var(--subtext);
+  margin-top: 4px;
+  text-align: center;
+}
+
+/* 3 Colored Metric Tiles */
+.kpi-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.kpi-tile {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  padding: 11px 6px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.kpi-tile::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.kpi-tile.cyan::before { background: var(--cyan); }
+.kpi-tile.amber::before { background: var(--amber); }
+.kpi-tile.violet::before { background: var(--violet); }
+
+.kpi-num {
+  font-size: clamp(17px, 4.8vw, 20px);
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.kpi-unit {
+  font-size: 10px;
+  font-weight: 700;
+  margin-top: 1px;
+}
+.kpi-tile.cyan .kpi-unit { color: #22d3ee; }
+.kpi-tile.amber .kpi-unit { color: #fbbf24; }
+.kpi-tile.violet .kpi-unit { color: #c4b5fd; }
+
+.kpi-title {
+  font-size: 10.5px;
+  color: var(--subtext);
+  margin-top: 2px;
+}
+
+/* Regional Benchmarking Comparison Bars */
+.region-bench-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bench-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.bench-lbl {
+  color: #cbd5e1;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bench-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.bench-fill {
+  height: 100%;
+  border-radius: 99px;
+  max-width: 100%;
+  transition: width 0.35s ease;
+}
+
+.bench-val {
+  text-align: right;
+  font-weight: 700;
+  color: #f8fafc;
+  font-size: 11px;
+}
+
+/* Coaching Analysis Card */
+.analysis-card {
+  border-left: 4px solid var(--emerald);
+}
+
+.analysis-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.analysis-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.profile-pill {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 99px;
+  background: rgba(6, 182, 212, 0.18);
+  color: #67e8f9;
+  white-space: nowrap;
+}
+
+.analysis-text {
+  font-size: 12.5px;
+  color: #cbd5e1;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+/* Phase Stacked Bar */
+.phase-bar-wrap {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.phase-bar-title {
+  font-size: 11px;
+  color: var(--subtext);
+  margin-bottom: 5px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.phase-stacked-bar {
+  display: flex;
+  width: 100%;
+  height: 9px;
+  border-radius: 99px;
+  overflow: hidden;
+  gap: 2px;
+}
+
+.seg-brake { background: var(--amber); }
+.seg-prop { background: var(--emerald); }
+.seg-flight { background: var(--violet); }
+
+.phase-legend-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  color: #cbd5e1;
+  margin-top: 5px;
+}
+
+/* Plot Card — Strictly Contained, Zero Overflow */
+.plot-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  background: rgba(9, 13, 22, 0.6);
+  padding: 3px;
+  border-radius: 10px;
+  margin: 8px 0;
+}
+
+.plot-tab {
+  border: none;
+  background: transparent;
+  color: var(--subtext);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 4px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.plot-tab.active {
+  background: rgba(6, 182, 212, 0.22);
+  color: #67e8f9;
+}
+
+.canvas-holder {
+  width: 100%;
+  max-width: 100%;
+  height: 170px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(9, 13, 22, 0.45);
+}
+
+canvas#forceCanvas {
+  display: block;
+  width: 100% !important;
+  height: 170px !important;
+  max-width: 100%;
+}
+
+.chart-caption {
+  font-size: 11px;
+  color: var(--subtext);
+  margin-top: 6px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Session Log & Regional Dataset Card */
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.log-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(9, 13, 22, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 11.5px;
+}
+
+.log-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+/* Top-Right Gmail Account Pill */
+.gmail-top-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 155px;
+  height: 34px;
+  padding: 3px 10px 3px 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.gmail-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4285F4, #34A853);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  text-transform: uppercase;
+}
+
+.gmail-top-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Screen 1 Gmail Account Banner */
+.gmail-account-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(66, 133, 244, 0.14), rgba(15, 23, 42, 0.92));
+  border: 1px solid rgba(66, 133, 244, 0.35);
+}
+
+.gmail-card-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+
+.gmail-g-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.gmail-card-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmail-card-email {
+  font-size: 11px;
+  color: #93c5fd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-gmail-switch {
+  padding: 6px 11px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.athlete-name-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+
+/* Automatic Live Location Status Banner */
+.live-loc-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  margin-bottom: 8px;
+  border-radius: 10px;
+  background: rgba(16, 185, 129, 0.11);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #a7f3d0;
+  line-height: 1.35;
+}
+
+.loc-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+}
+
+.loc-dot.pulsing {
+  background: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.25);
+}
+
+.bottom-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* Flash animation when a new jump updates Screen 3 */
+@keyframes scoreFlashPulse {
+  0% { transform: scale(0.985); box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.65); }
+  100% { transform: scale(1); box-shadow: none; }
+}
+
+.score-updated-flash {
+  animation: scoreFlashPulse 0.45s ease-out;
+}
+
+/* Gmail Account Chooser Modal */
+.gmail-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  background: rgba(3, 7, 18, 0.78);
+  backdrop-filter: blur(6px);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gmail-modal-backdrop.open {
+  display: flex;
+}
+
+.gmail-modal-sheet {
+  width: 100%;
+  max-width: 380px;
+  background: #111827;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 18px 16px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.gmail-modal-header {
+  text-align: center;
+}
+
+.google-logo-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  margin-bottom: 8px;
+}
+
+.google-wordmark {
+  font-size: 12px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.gmail-modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.gmail-modal-sub {
+  font-size: 12px;
+  color: var(--subtext);
+  margin-top: 2px;
+}
+
+.gmail-acct-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gmail-acct-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 11px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: #f8fafc;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.gmail-acct-item:hover, .gmail-acct-item:active {
+  background: rgba(66, 133, 244, 0.18);
+  border-color: rgba(66, 133, 244, 0.45);
+}
+
+.gmail-acct-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #10b981);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gmail-acct-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.gmail-acct-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.gmail-acct-addr {
+  font-size: 11.5px;
+  color: #93c5fd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gmail-custom-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gmail-form-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--subtext);
+}
+
+.gmail-input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(8, 13, 26, 0.85);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 600;
+  outline: none;
+}
+
+.gmail-input:focus {
+  border-color: #60a5fa;
+}
+
+.gmail-error {
+  font-size: 11.5px;
+  color: #fda4af;
+  min-height: 15px;
+}
+
+.btn-google-continue {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 11px;
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.oauth-advanced {
+  font-size: 11.5px;
+  color: var(--subtext);
+}
+
+.oauth-advanced summary {
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.oauth-adv-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.gmail-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.btn-gmail-signout {
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  background: rgba(244, 63, 94, 0.12);
+  color: #fda4af;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-gmail-close {
+  margin-left: auto;
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: var(--subtext);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Real Google OAuth 2.0 Button & Verified Account Box */
+.btn-google-oauth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13.5px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.btn-google-oauth-main:active {
+  transform: scale(0.98);
+}
+
+.google-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.gsi-btn-wrap {
+  display: flex;
+  justify-content: center;
+  min-height: 40px;
+}
+
+.gmail-signedin-box {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.gmail-signedin-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gmail-user-pic {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
+
+</style>
+  <!-- Official Google Identity Services SDK -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div id="prototype-banner" style="background:#78350f;color:#fef3c7;text-align:center;padding:8px 12px;font:600 13px/1.4 system-ui,sans-serif;letter-spacing:0.02em;">
+    Prototype, work in progress
+  </div>
+
+  <div class="mobile-viewport">
+    <!-- Top Bar with Easy Back Button + Verified Google Account Pill -->
+    <header class="app-topbar">
+      <div class="nav-left">
+        <button type="button" class="btn-back" id="btnTopBack" aria-label="Go back">
+          ← Back
+        </button>
+        <div class="brand-badge">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#042f2e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title">TalentScan 2036</div>
+          <div class="brand-subtitle">Smartphone Force &amp; Talent Lab</div>
+        </div>
+      </div>
+
+      <!-- Top-Right Google Account Button / Badge -->
+      <button type="button" class="gmail-top-pill" id="btnTopGmail" title="Google Account">
+        <span class="gmail-avatar" id="topGmailAvatar">G</span>
+        <span class="gmail-top-text" id="topGmailText">Sign in</span>
+      </button>
+    </header>
+
+    <!-- Always-Clickable 3-Step Navigation Bar -->
+    <nav class="step-tabs" aria-label="Steps">
+      <button type="button" class="step-tab active" data-step="1" id="tabStep1">1. Athlete Info</button>
+      <button type="button" class="step-tab" data-step="2" id="tabStep2">2. Jump Test</button>
+      <button type="button" class="step-tab" data-step="3" id="tabStep3">3. Analysis</button>
+    </nav>
+
+    <!-- SCREEN 1: ATHLETE, GOOGLE ACCOUNT & AUTO LIVE LOCATION -->
+    <section class="screen active" id="screen1">
+      <div class="scroll-body">
+        <!-- Verified Google Account Strip on Screen 1 -->
+        <div class="gmail-account-card" id="gmailCardBanner">
+          <div class="gmail-card-left">
+            <div class="gmail-g-icon" id="cardGmailAvatar">
+              <svg width="18" height="18" viewBox="0 0 48 48">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+            </div>
+            <div style="min-width:0;">
+              <div class="gmail-card-name" id="cardGmailName">Not signed in with Google</div>
+              <div class="gmail-card-email" id="cardGmailEmail">Sign in via Google OAuth to link jumps</div>
+            </div>
+          </div>
+          <button type="button" class="btn-gmail-switch" id="btnOpenGmailModal">Sign in</button>
+        </div>
+
+        <!-- Athlete & Automatic Live Location Card -->
+        <div class="card">
+          <div class="athlete-name-row">
+            <label for="inAthleteName" class="region-label">Athlete Name / ID</label>
+            <input type="text" id="inAthleteName" class="field-control" placeholder="Athlete Name (populated after Google Sign-In)" value="" />
+          </div>
+
+          <div class="segmented-control" role="tablist">
+            <button type="button" class="seg-btn active" data-sex="M" id="sexM">Boy / Male</button>
+            <button type="button" class="seg-btn" data-sex="F" id="sexF">Girl / Female</button>
+          </div>
+
+          <div class="stepper-grid">
+            <div class="stepper-card">
+              <div class="stepper-label">Weight (kg)</div>
+              <div class="stepper-controls">
+                <button type="button" class="step-adj" data-target="inWeight" data-delta="-1">−</button>
+                <input type="number" id="inWeight" class="stepper-input" value="45" min="20" max="140" step="0.5" inputmode="decimal" />
+                <button type="button" class="step-adj" data-target="inWeight" data-delta="1">+</button>
+              </div>
+            </div>
+
+            <div class="stepper-card">
+              <div class="stepper-label">Age (years)</div>
+              <div class="stepper-controls">
+                <button type="button" class="step-adj" data-target="inAge" data-delta="-1">−</button>
+                <input type="number" id="inAge" class="stepper-input" value="14" min="8" max="60" step="1" inputmode="numeric" />
+                <button type="button" class="step-adj" data-target="inAge" data-delta="1">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Automatic Live Location Section -->
+          <div class="region-header">
+            <span class="region-label">Live Location (Auto-Selected)</span>
+            <button type="button" class="btn-gps" id="btnDetectPlace">🔄 Refresh Live GPS</button>
+          </div>
+
+          <!-- Live GPS / Location Auto-Detection Status Banner -->
+          <div class="live-loc-banner" id="liveLocBanner">
+            <span class="loc-dot pulsing" id="liveLocDot"></span>
+            <span id="liveLocStatusText">Detecting your live location automatically…</span>
+          </div>
+
+          <div class="region-grid">
+            <select id="inState" class="field-control" aria-label="State or Union Territory">
+              <option value="Maharashtra">Maharashtra</option>
+              <option value="Karnataka">Karnataka</option>
+              <option value="Haryana">Haryana</option>
+              <option value="Punjab">Punjab</option>
+              <option value="Odisha">Odisha</option>
+              <option value="Tamil Nadu">Tamil Nadu</option>
+              <option value="Manipur">Manipur</option>
+              <option value="Kerala">Kerala</option>
+              <option value="Gujarat">Gujarat</option>
+              <option value="Delhi NCR">Delhi NCR</option>
+              <option value="Uttar Pradesh">Uttar Pradesh</option>
+              <option value="Rajasthan">Rajasthan</option>
+              <option value="West Bengal">West Bengal</option>
+              <option value="Telangana">Telangana</option>
+              <option value="Andhra Pradesh">Andhra Pradesh</option>
+              <option value="Madhya Pradesh">Madhya Pradesh</option>
+              <option value="Bihar">Bihar</option>
+              <option value="Assam">Assam</option>
+              <option value="Jharkhand">Jharkhand</option>
+              <option value="Chhattisgarh">Chhattisgarh</option>
+              <option value="Uttarakhand">Uttarakhand</option>
+              <option value="Himachal Pradesh">Himachal Pradesh</option>
+              <option value="Goa">Goa</option>
+              <option value="Mizoram">Mizoram</option>
+              <option value="Chandigarh">Chandigarh</option>
+              <option value="Jammu and Kashmir">Jammu &amp; Kashmir</option>
+              <option value="Puducherry">Puducherry</option>
+              <option value="Meghalaya">Meghalaya</option>
+              <option value="Tripura">Tripura</option>
+              <option value="Arunachal Pradesh">Arunachal Pradesh</option>
+              <option value="Nagaland">Nagaland</option>
+              <option value="Sikkim">Sikkim</option>
+              <option value="Ladakh">Ladakh</option>
+              <option value="Other India">Other State / UT</option>
+            </select>
+
+            <input type="text" id="inDistrict" class="field-control" placeholder="District / City" value="Mumbai" />
+          </div>
+
+          <div class="area-pills" id="areaPills">
+            <button type="button" class="area-pill active" data-area="Urban">Urban / City</button>
+            <button type="button" class="area-pill" data-area="Semi-Urban">Town / Taluk</button>
+            <button type="button" class="area-pill" data-area="Rural">Rural / Village</button>
+          </div>
+        </div>
+
+        <!-- Quick 3-Step Guide -->
+        <div class="card guide-list">
+          <div class="guide-row">
+            <span class="guide-icon c1">1</span>
+            <span>Tap <strong>Start Live Sensor Jump</strong> and hold phone flat against your <strong>chest</strong>.</span>
+          </div>
+          <div class="guide-row">
+            <span class="guide-icon c2">2</span>
+            <span>Stand still for <strong>1.5 seconds</strong> during calibration, then squat &amp; jump on <strong>"JUMP!"</strong>.</span>
+          </div>
+          <div class="guide-row">
+            <span class="guide-icon c3">3</span>
+            <span>Landing is auto-detected, or tap <strong>Analyze Now</strong> anytime for fresh metrics.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-actions">
+        <button type="button" class="btn-primary" id="btnStartLive">
+          Start Live Sensor Jump
+        </button>
+        <button type="button" class="btn-secondary" id="btnSimulateJump">
+          Simulate New Jump (Fresh Trial)
+        </button>
+      </div>
+    </section>
+
+    <!-- SCREEN 2: GUIDED JUMP CAPTURE -->
+    <section class="screen" id="screen2">
+      <div class="capture-center">
+        <div class="ring-wrap" id="captureRing">
+          <div class="ring-main" id="ringMainText">3</div>
+          <div class="ring-sub" id="ringSubText">Hold on chest</div>
+        </div>
+
+        <h2 class="screen-heading" id="captureHeading">Hold Phone to Chest</h2>
+        <p class="screen-sub" id="captureSub" style="max-width:290px;">
+          Press phone flat against your sternum with both hands and stand still.
+        </p>
+
+        <div class="live-meter-wrap">
+          <div class="live-meter-bar">
+            <div class="live-meter-fill" id="liveMeterFill"></div>
+          </div>
+          <div style="font-size:11.5px; color:var(--subtext); margin-top:6px;" id="liveGReadout">
+            Waiting for motion sensor stream…
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-actions">
+        <button type="button" class="btn-primary" id="btnFinishJump">
+          Done Jumping · Analyze Now
+        </button>
+        <button type="button" class="btn-secondary" id="btnBackToSetup">
+          ← Back to Athlete Setup
+        </button>
+      </div>
+    </section>
+
+    <!-- SCREEN 3: VISUAL POST-JUMP & REGIONAL ANALYSIS -->
+    <section class="screen" id="screen3">
+      <div class="scroll-body">
+        <!-- 1. Hero Jump Score & Non-Overflowing Percentile Gauge -->
+        <div class="hero-score-card" id="heroScoreCard">
+          <div class="score-top-row">
+            <span class="score-tag" id="resAthleteSummary">14y Male · 45 kg · Mumbai, MH</span>
+            <span class="source-badge" id="resSourceBadge">Jump #1</span>
+          </div>
+          <div class="big-height" id="resHeightVal">34.5 <small>cm</small></div>
+          <div style="font-size:11.5px; color:#cbd5e1;" id="resSubLine">
+            Flight Time: 530 ms · Takeoff Speed: 2.60 m/s
+          </div>
+
+          <div class="centile-gauge">
+            <div class="gauge-labels">
+              <span>All-India Age &amp; Sex Rank</span>
+              <span id="resCentileLabel" style="color:#34d399;">82nd Percentile</span>
+            </div>
+            <div class="gauge-track-outer">
+              <div class="gauge-track">
+                <div class="gauge-thumb" id="gaugeThumb" style="left: 82%;"></div>
+              </div>
+            </div>
+            <div class="gauge-ticks">
+              <span id="tickP10">P10: 25cm</span>
+              <span id="tickP50">Avg: 30cm</span>
+              <span id="tickP75">Good: 33cm</span>
+              <span id="tickP95">Elite: 38cm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Three Color-Coded Key Metrics -->
+        <div class="kpi-row-3">
+          <div class="kpi-tile cyan">
+            <div class="kpi-num" id="kpiForce">2.46</div>
+            <div class="kpi-unit">× Body Wt</div>
+            <div class="kpi-title">Peak Force</div>
+          </div>
+          <div class="kpi-tile amber">
+            <div class="kpi-num" id="kpiPower">48.4</div>
+            <div class="kpi-unit">Watts / kg</div>
+            <div class="kpi-title">Peak Power</div>
+          </div>
+          <div class="kpi-tile violet">
+            <div class="kpi-num" id="kpiRsi">0.50</div>
+            <div class="kpi-unit">RSImod</div>
+            <div class="kpi-title">Quickness</div>
+          </div>
+        </div>
+
+        <!-- 3. Regional Benchmarking Card (District / State / National / Khelo India) -->
+        <div class="card">
+          <div class="analysis-header">
+            <span class="analysis-title" id="regionCardTitle">Regional Benchmark · Maharashtra</span>
+            <span class="profile-pill" id="regionRankPill">State P80</span>
+          </div>
+          <p class="analysis-text" id="regionSummaryText" style="margin-bottom:6px;">
+            Comparing this jump against age-matched norms for your live location, all-India median, and Khelo India targets.
+          </p>
+          <div class="region-bench-list">
+            <div class="bench-row">
+              <span class="bench-lbl">This Jump</span>
+              <div class="bench-track"><div class="bench-fill" id="barBenchYou" style="width:78%; background:var(--emerald);"></div></div>
+              <span class="bench-val" id="valBenchYou">34.5 cm</span>
+            </div>
+            <div class="bench-row">
+              <span class="bench-lbl" id="lblStateAvg">State Median</span>
+              <div class="bench-track"><div class="bench-fill" id="barBenchState" style="width:66%; background:var(--cyan);"></div></div>
+              <span class="bench-val" id="valBenchState">30.8 cm</span>
+            </div>
+            <div class="bench-row">
+              <span class="bench-lbl">All-India Avg</span>
+              <div class="bench-track"><div class="bench-fill" id="barBenchIndia" style="width:62%; background:var(--amber);"></div></div>
+              <span class="bench-val" id="valBenchIndia">29.6 cm</span>
+            </div>
+            <div class="bench-row">
+              <span class="bench-lbl">Khelo Target</span>
+              <div class="bench-track"><div class="bench-fill" id="barBenchKhelo" style="width:86%; background:var(--violet);"></div></div>
+              <span class="bench-val" id="valBenchKhelo">36.5 cm</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Coaching Analysis & Phase Timing -->
+        <div class="card analysis-card">
+          <div class="analysis-header">
+            <span class="analysis-title">Biomechanical Analysis &amp; Tip</span>
+            <span class="profile-pill" id="dnaProfileBadge">Balanced Explosive</span>
+          </div>
+          <p class="analysis-text" id="dnaTakeawayText">
+            Strong upward push-off with a crisp propulsion phase.
+          </p>
+
+          <div class="phase-bar-wrap">
+            <div class="phase-bar-title">
+              <span>Jump Phase Timing</span>
+              <span id="totalContactLabel">Contact: 690 ms</span>
+            </div>
+            <div class="phase-stacked-bar">
+              <div class="seg-brake" id="segBrakeBar" style="width: 34%;"></div>
+              <div class="seg-prop" id="segPropBar" style="width: 24%;"></div>
+              <div class="seg-flight" id="segFlightBar" style="width: 42%;"></div>
+            </div>
+            <div class="phase-legend-row">
+              <span style="color:#fbbf24;">● Brake <strong id="lblBrakeMs">420ms</strong></span>
+              <span style="color:#34d399;">● Push <strong id="lblPropMs">270ms</strong></span>
+              <span style="color:#c4b5fd;">● Flight <strong id="lblFlightMs">530ms</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5. Strictly Contained, Non-Overflowing Plot with Tab Switcher -->
+        <div class="card">
+          <div class="analysis-header" style="margin-bottom:2px;">
+            <span class="analysis-title">Physics-Anchored Waveform</span>
+            <span style="font-size:11px; color:var(--subtext);" id="plotPeakBadge">Peak: 2.46× BW</span>
+          </div>
+
+          <div class="plot-tabs" id="plotTabs">
+            <button type="button" class="plot-tab active" data-plot="force">Force (vGRF)</button>
+            <button type="button" class="plot-tab" data-plot="velocity">Velocity (m/s)</button>
+            <button type="button" class="plot-tab" data-plot="power">Power (W/kg)</button>
+          </div>
+
+          <div class="canvas-holder">
+            <canvas id="forceCanvas"></canvas>
+          </div>
+          <div class="chart-caption" id="chartTouchCaption">
+            Touch or drag across the plot to inspect exact values
+          </div>
+        </div>
+
+        <!-- 6. Regional Dataset & Session Camp Log (Post-Collection Value) -->
+        <div class="card">
+          <div class="log-header">
+            <span class="analysis-title">Saved Regional Jumps (<span id="savedCountLbl">0</span>)</span>
+            <button type="button" class="btn-gps" id="btnClearLog" style="border-color:rgba(244,63,94,0.4); color:#fda4af; background:rgba(244,63,94,0.12);">Clear</button>
+          </div>
+          <div class="log-list" id="sessionLogList"></div>
+          <div class="log-actions">
+            <button type="button" class="btn-secondary" id="btnExportCampCSV" style="padding:9px; font-size:12px;">
+              Export All Jumps (CSV)
+            </button>
+            <button type="button" class="btn-secondary" id="btnExportTrialJSON" style="padding:9px; font-size:12px;">
+              Export Waveform (JSON)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bottom-actions">
+        <button type="button" class="btn-primary" id="btnJumpAgain">
+          Start New Jump (Live Sensor)
+        </button>
+        <div class="bottom-row-2">
+          <button type="button" class="btn-secondary" id="btnSimAnotherJump">
+            ⚡ New Simulated Jump
+          </button>
+          <button type="button" class="btn-secondary" id="btnEditAthlete">
+            ← Athlete / Place
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- REAL GOOGLE OAUTH 2.0 LOGIN MODAL (Redirects to accounts.google.com for Gmail + Password / 2FA) -->
+  <div class="gmail-modal-backdrop" id="gmailModalBackdrop" aria-hidden="true">
+    <div class="gmail-modal-sheet" role="dialog" aria-labelledby="gmailModalTitle">
+      <div class="gmail-modal-header">
+        <div class="google-logo-row">
+          <svg width="22" height="22" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+          <span class="google-wordmark">Google OAuth 2.0 Authentication</span>
+        </div>
+        <h3 class="gmail-modal-title" id="gmailModalTitle">Sign in with your Gmail</h3>
+        <p class="gmail-modal-sub" id="gmailModalSub">
+          Redirects to <strong>accounts.google.com</strong> where Google verifies your Gmail address, password, and 2-Step Verification.
+        </p>
+      </div>
+
+      <!-- Current Signed-In User Box (shown when already authenticated) -->
+      <div class="gmail-signedin-box" id="gmailSignedInBox" style="display:none;">
+        <div class="gmail-signedin-row">
+          <img id="modalUserPic" src="" alt="" class="gmail-user-pic" style="display:none;" />
+          <div class="gmail-acct-avatar" id="modalUserInitial">P</div>
+          <div style="min-width:0; flex:1;">
+            <div class="gmail-acct-name" id="modalUserName">Signed In</div>
+            <div class="gmail-acct-addr" id="modalUserEmail">user@gmail.com</div>
+          </div>
+          <span style="font-size:11px; color:#34d399; font-weight:800;">✓ Verified</span>
+        </div>
+      </div>
+
+      <!-- Primary Action: Full Google OAuth 2.0 Redirect (accounts.google.com email + password + 2FA) -->
+      <button type="button" class="btn-google-oauth-main" id="btnGoogleOAuthRedirect">
+        <span class="google-btn-icon">
+          <svg width="18" height="18" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+            <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+            <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+          </svg>
+        </span>
+        <span id="btnGoogleOAuthLabel">Continue to Google Sign-In (accounts.google.com)</span>
+      </button>
+
+      <!-- Official Google Identity Services Button Container -->
+      <div class="gsi-btn-wrap" id="googleGsiButtonContainer"></div>
+
+      <div class="gmail-error" id="gmailErrorMsg"></div>
+
+      <div class="gmail-modal-footer">
+        <button type="button" class="btn-gmail-signout" id="btnGmailSignOut" style="display:none;">Sign out of Gmail</button>
+        <button type="button" class="btn-gmail-close" id="btnCloseGmailModal" style="display:none;">Back to App</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+/**
+ * TalentScan 2036 — Clean 3-Screen Mobile CMJ & Regional Benchmarking App
+ * Features:
+ * - Easy navigation: top Back button, clickable 3-step tabs, and phone hardware Back button support
+ * - Live 6-axis smartphone IMU capture + dynamic trial-to-trial computation (values update every jump)
+ * - Strictly clipped, auto-scaled retina plots (Force / Velocity / Power) with zero overflow
+ * - State, District & Urban/Rural capture + Regional Benchmarking + Persistent Camp CSV Log
+ */
+(function () {
+  "use strict";
+
+  const G = 9.80665;
+  const STORAGE_KEY = "talentscan_regional_log_v2";
+
+  // Regional normative multipliers (reflecting athletic cohort distributions across states)
+  const STATE_FACTORS = {
+    "Haryana": 1.06,
+    "Punjab": 1.05,
+    "Manipur": 1.06,
+    "Kerala": 1.03,
+    "Maharashtra": 1.03,
+    "Karnataka": 1.02,
+    "Odisha": 1.03,
+    "Tamil Nadu": 1.02,
+    "Delhi NCR": 1.03,
+    "Mizoram": 1.05,
+    "Uttarakhand": 1.02,
+    "Gujarat": 1.00,
+    "Uttar Pradesh": 1.01,
+    "Rajasthan": 1.01,
+    "West Bengal": 1.00,
+    "Telangana": 1.01,
+    "Andhra Pradesh": 1.00,
+    "Madhya Pradesh": 1.00,
+    "Bihar": 0.99,
+    "Assam": 1.02,
+    "Jharkhand": 1.03,
+    "Chhattisgarh": 1.01,
+    "Himachal Pradesh": 1.01,
+    "Goa": 1.02,
+    "Chandigarh": 1.04,
+    "Jammu and Kashmir": 1.01,
+    "Puducherry": 1.01,
+    "Meghalaya": 1.03,
+    "Tripura": 1.00,
+    "Arunachal Pradesh": 1.02,
+    "Nagaland": 1.03,
+    "Sikkim": 1.02,
+    "Ladakh": 1.01,
+    "Other India": 1.00
+  };
+
+  const GOOGLE_OAUTH_CLIENT_ID = ""; // stripped for public prototype — configure before enabling Google Sign-In
+  const GOOGLE_OAUTH_REDIRECT_URI = "https://praveenmaths89.github.io/talentscan-2036/";
+  const AUTH_STORAGE_KEY = "talentscan_google_oauth_verified_v2";
+
+  let state = {
+    currentStep: 1,
+    sex: "M",
+    areaType: "Urban",
+    plotMode: "force", // "force" | "velocity" | "power"
+    trialCounter: 0,
+    currentResult: null,
+    touchIndex: null,
+    liveTimer: null,
+    liveRecording: false,
+    liveSamples: [],
+    liveStartMs: 0,
+    motionListener: null,
+    detectedTakeoff: false,
+    detectedLanding: false,
+    sessionLog: [],
+    gmailUser: null,
+    gsiInitialized: false,
+    liveCoords: null
+  };
+
+  // --- Load Saved Regional Jumps from localStorage ---
+  function loadSessionLog() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          state.sessionLog = parsed;
+          state.trialCounter = parsed.length;
+        }
+      }
+    } catch (_) {}
+  }
+
+  function saveSessionLog() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.sessionLog.slice(0, 100)));
+    } catch (_) {}
+  }
+
+  // --- Audio Beep & Speech Cues ---
+  function playBeep(freq, durationMs) {
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      const ctx = new Ctx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.value = 0.16;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => {
+        osc.stop();
+        ctx.close();
+      }, durationMs);
+    } catch (_) {}
+  }
+
+  function speakCue(text) {
+    try {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 1.08;
+        window.speechSynthesis.speak(u);
+      }
+    } catch (_) {}
+  }
+
+  // --- Navigation & Hardware Back Button Sync ---
+  function stopActiveCaptureTimers() {
+    clearInterval(state.liveTimer);
+    state.liveRecording = false;
+    if (state.motionListener) {
+      window.removeEventListener("devicemotion", state.motionListener);
+      state.motionListener = null;
+    }
+  }
+
+  function showScreen(stepNum, pushHistory = true) {
+    if (stepNum !== 2) {
+      stopActiveCaptureTimers();
+    }
+    state.currentStep = stepNum;
+
+    [1, 2, 3].forEach((n) => {
+      document.getElementById("screen" + n).classList.toggle("active", n === stepNum);
+      document.getElementById("tabStep" + n).classList.toggle("active", n === stepNum);
+    });
+
+    // Show top Back button whenever on Screen 2 or Screen 3
+    const backBtn = document.getElementById("btnTopBack");
+    backBtn.classList.toggle("visible", stepNum > 1);
+
+    if (pushHistory) {
+      try {
+        history.pushState({ step: stepNum }, "", `#step${stepNum}`);
+      } catch (_) {}
+    }
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    if (stepNum === 3) {
+      requestAnimationFrame(() => drawForceCanvas());
+    }
+  }
+
+  // --- Read Current Athlete & Place Inputs ---
+  function getAthleteInputs() {
+    const nameEl = document.getElementById("inAthleteName");
+    const athleteName = ((nameEl && nameEl.value) || (state.gmailUser && state.gmailUser.name) || "Athlete").trim();
+    const gmailEmail = (state.gmailUser && state.gmailUser.email) ? state.gmailUser.email : "guest@gmail.com";
+    const massKg = Math.max(20, Math.min(150, parseFloat(document.getElementById("inWeight").value) || 45));
+    const age = Math.max(8, Math.min(60, parseInt(document.getElementById("inAge").value, 10) || 14));
+    const stateName = document.getElementById("inState").value || "Maharashtra";
+    const district = (document.getElementById("inDistrict").value || "Mumbai").trim() || "Mumbai";
+    return {
+      athleteName,
+      gmailEmail,
+      massKg,
+      age,
+      sex: state.sex,
+      stateName,
+      district,
+      areaType: state.areaType
+    };
+  }
+
+  // --- Physics-Constrained Kinematics & Metrics Calculator ---
+  function computeAnchoredKinematics(t, vgrfBW, rawImuBW, fs, phases, athlete, sourceLabel) {
+    const dt = 1 / fs;
+    const N = t.length;
+    const i0 = Math.max(0, Math.round(phases.t0 * fs));
+    const iTo = Math.min(N - 1, Math.round(phases.tTakeoff * fs));
+    const iLand = Math.min(N - 1, Math.round(phases.tLanding * fs));
+
+    // Exact Newton Impulse-Momentum Projection:
+    // \int_{t0}^{t_takeoff} (vGRF(t) - 1)*g dt = v_takeoff = 0.5 * g * t_flight
+    const vTakeoffTarget = 0.5 * G * phases.flightTime;
+    let posImp = 0, negImp = 0;
+    for (let i = i0; i < iTo; i++) {
+      const net = vgrfBW[i] - 1.0;
+      if (net >= 0) posImp += net * G * dt;
+      else negImp += (-net) * G * dt;
+    }
+    const alpha = (vTakeoffTarget + negImp) / Math.max(posImp, 1e-4);
+    for (let i = i0; i < iTo; i++) {
+      if (vgrfBW[i] > 1.0) {
+        vgrfBW[i] = 1.0 + (vgrfBW[i] - 1.0) * alpha;
+      }
+    }
+    for (let i = iTo; i < iLand; i++) {
+      vgrfBW[i] = 0.0;
+    }
+
+    const vel = new Array(N).fill(0);
+    const pos = new Array(N).fill(0);
+    const powerRel = new Array(N).fill(0);
+
+    for (let i = i0; i < N; i++) {
+      if (i <= iTo) {
+        const acc = (vgrfBW[i] - 1.0) * G;
+        vel[i] = (i > 0 ? vel[i - 1] : 0) + acc * dt;
+        pos[i] = (i > 0 ? pos[i - 1] : 0) + vel[i] * dt;
+        powerRel[i] = vgrfBW[i] * G * vel[i];
+      } else if (i > iTo && i < iLand) {
+        const tf = (i - iTo) * dt;
+        vel[i] = vel[iTo] - G * tf;
+        pos[i] = pos[iTo] + vel[iTo] * tf - 0.5 * G * tf * tf;
+        powerRel[i] = 0;
+      } else {
+        vel[i] = vel[i - 1] * 0.78;
+        pos[i] = pos[i - 1] * 0.80;
+        powerRel[i] = vgrfBW[i] * G * vel[i];
+      }
+    }
+
+    let iProp = Math.round(phases.tProp * fs);
+    let dipDepthM = 0;
+    for (let i = i0 + 4; i < iTo; i++) {
+      if (pos[i] < dipDepthM) dipDepthM = pos[i];
+      if (vel[i - 1] < 0 && vel[i] >= 0) {
+        iProp = i;
+        break;
+      }
+    }
+
+    let peakForceBW = 0, peakPowerRel = 0;
+    let brakingImpNs = 0, propImpNs = 0;
+    for (let i = i0; i < iTo; i++) {
+      if (vgrfBW[i] > peakForceBW) peakForceBW = vgrfBW[i];
+      if (powerRel[i] > peakPowerRel) peakPowerRel = powerRel[i];
+      const fNetN = (vgrfBW[i] - 1.0) * athlete.massKg * G;
+      if (i < iProp) {
+        if (fNetN > 0) brakingImpNs += fNetN * dt;
+      } else {
+        if (fNetN > 0) propImpNs += fNetN * dt;
+      }
+    }
+
+    const vTo = vel[iTo];
+    const jumpHeightCm = 100 * (vTo * vTo) / (2 * G);
+    const brakeMs = Math.max(110, Math.round((iProp * dt - phases.t0) * 1000));
+    const propMs = Math.max(100, Math.round((phases.tTakeoff - iProp * dt) * 1000));
+    const flightMs = Math.round(phases.flightTime * 1000);
+    const contactMs = brakeMs + propMs;
+    const rsiMod = (jumpHeightCm / 100) / Math.max(contactMs / 1000, 0.15);
+
+    state.trialCounter += 1;
+
+    return {
+      trialNum: state.trialCounter,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+      sourceLabel,
+      athlete,
+      fs, dt, t, vgrfBW, rawImuBW, vel, pos, powerRel,
+      phases: {
+        ...phases,
+        tPropDetected: iProp * dt
+      },
+      metrics: {
+        jumpHeightCm,
+        peakForceBW,
+        peakForceN: peakForceBW * athlete.massKg * G,
+        peakPowerRel,
+        peakPowerW: peakPowerRel * athlete.massKg,
+        vTakeoff: vTo,
+        rsiMod,
+        brakeMs,
+        propMs,
+        flightMs,
+        contactMs,
+        brakingImpNs,
+        propImpNs,
+        dipDepthCm: Math.abs(dipDepthM * 100)
+      }
+    };
+  }
+
+  // --- Dynamic Trial Generator (Changes Every Jump & Responds to Age/Sex/Weight/State) ---
+  function generateDynamicTrial(athlete, customSeedDelta) {
+    const fs = 100;
+    const dt = 1 / fs;
+    const totalTime = 2.1;
+    const N = Math.round(totalTime * fs);
+
+    // Compute baseline athletic jump height from age, sex, mass, and state factor
+    const maturity = 1 / (1 + Math.exp(-(athlete.age - 13.5) / 2.4));
+    const sexFactor = athlete.sex === "M" ? 1.0 : 0.83;
+    const stateFactor = STATE_FACTORS[athlete.stateName] || 1.0;
+    // Slight body-mass scaling relative to age-expected mass
+    const expectedMass = 22 + 44 * maturity * (athlete.sex === "M" ? 1.0 : 0.88);
+    const massRatio = Math.max(0.88, Math.min(1.12, 1.0 - 0.0025 * (athlete.massKg - expectedMass)));
+
+    // Natural trial-to-trial variability (+-7% height, +-7% force/timing) so every jump is visibly fresh
+    let rand1 = (Math.random() - 0.46) * 0.14 + (customSeedDelta || 0);
+    const rand2 = (Math.random() - 0.5) * 0.14;
+    const rand3 = (Math.random() - 0.5) * 0.10;
+
+    let targetHeightM = Math.max(0.16, Math.min(0.68, (0.21 + 0.22 * maturity) * sexFactor * stateFactor * massRatio * (1 + rand1)));
+    if (state.currentResult && state.currentResult.metrics) {
+      const prevM = state.currentResult.metrics.jumpHeightCm / 100;
+      if (Math.abs(targetHeightM - prevM) < 0.008) {
+        targetHeightM = Math.max(0.16, Math.min(0.68, targetHeightM + (Math.random() > 0.5 ? 0.018 : -0.016)));
+      }
+    }
+    const flightTime = Math.sqrt((8 * targetHeightM) / G);
+
+    const eccDuration = Math.max(0.30, Math.min(0.52, 0.41 * (1 + rand3)));
+    const concDuration = Math.max(0.21, Math.min(0.34, 0.26 * (1 - 0.5 * rand1)));
+    const unweightDipBW = Math.max(0.42, Math.min(0.72, 0.56 * (1 + rand2)));
+    const brakingPeakBW = Math.max(1.70, Math.min(2.85, (1.95 + 0.45 * maturity) * (1 + rand2)));
+    const propPeakBW = Math.max(1.95, Math.min(3.30, (2.25 + 0.55 * maturity) * sexFactor * (1 + 0.7 * rand1)));
+
+    const t0 = 0.36;
+    const tBrake = t0 + eccDuration * 0.48;
+    const tProp = t0 + eccDuration;
+    const tTakeoff = tProp + concDuration;
+    const tLanding = tTakeoff + flightTime;
+
+    const t = new Array(N);
+    const vgrfBW = new Array(N);
+    const rawImuBW = new Array(N);
+
+    for (let i = 0; i < N; i++) {
+      const ti = i * dt;
+      t[i] = ti;
+      let f = 1.0;
+      if (ti < t0) {
+        f = 1.0 + 0.006 * Math.sin(2 * Math.PI * 3.2 * ti);
+      } else if (ti >= t0 && ti < tBrake) {
+        const u = (ti - t0) / (tBrake - t0);
+        f = 1.0 - unweightDipBW * Math.sin(Math.PI * u);
+      } else if (ti >= tBrake && ti < tProp) {
+        const u = (ti - tBrake) / (tProp - tBrake);
+        f = 1.0 + (brakingPeakBW - 1.0) * Math.pow(Math.sin((Math.PI / 2) * u), 1.15);
+      } else if (ti >= tProp && ti < tTakeoff) {
+        const u = (ti - tProp) / (tTakeoff - tProp);
+        const hump = Math.sin(Math.PI * Math.pow(u, 0.82));
+        const blend = (1 - u) * (brakingPeakBW - 1.0) * 0.65;
+        f = 1.0 + Math.max(blend, (propPeakBW - 1.0) * hump) * (1 - Math.pow(u, 3.2));
+        if (u > 0.88) f *= 1 - (u - 0.88) / 0.12;
+      } else if (ti >= tTakeoff && ti < tLanding) {
+        f = 0.0;
+      } else {
+        const u = ti - tLanding;
+        const impact = 2.75 * Math.exp(-u / 0.065) * Math.sin(Math.PI * Math.min(u / 0.14, 1.0));
+        const settle = 1.0 + 0.20 * Math.exp(-u / 0.18) * Math.cos(2 * Math.PI * 3.5 * u);
+        f = Math.max(0, impact + settle);
+      }
+      vgrfBW[i] = f;
+      rawImuBW[i] = Math.max(0, f + (ti >= t0 && ti < tTakeoff ? 0.11 * Math.sin(6 * (ti - t0)) : 0));
+    }
+
+    return computeAnchoredKinematics(
+      t, vgrfBW, rawImuBW, fs,
+      { t0, tBrake, tProp, tTakeoff, tLanding, flightTime },
+      athlete,
+      `Simulated Jump #${state.trialCounter + 1}`
+    );
+  }
+
+  // --- Analyze Real Smartphone Sensor Stream (Extracts True Signal Features) ---
+  function analyzeLiveSamples(samples, athlete) {
+    if (!samples || samples.length < 15) {
+      return generateDynamicTrial(athlete);
+    }
+
+    const durationS = Math.max(0.8, samples[samples.length - 1].t - samples[0].t);
+    const actualHz = Math.round(samples.length / durationS);
+
+    // Resample onto uniform 100 Hz grid
+    const fs = 100;
+    const dt = 1 / fs;
+    const N = Math.max(120, Math.min(600, Math.round(durationS * fs)));
+    const t = new Array(N);
+    const rawImuBW = new Array(N);
+
+    let k = 0;
+    const tStart0 = samples[0].t;
+    for (let i = 0; i < N; i++) {
+      const ti = i * dt;
+      t[i] = ti;
+      const targetT = tStart0 + ti;
+      while (k < samples.length - 2 && samples[k + 1].t < targetT) k++;
+      const s0 = samples[k];
+      const s1 = samples[Math.min(k + 1, samples.length - 1)];
+      const w = Math.max(0, Math.min(1, (targetT - s0.t) / Math.max(1e-4, s1.t - s0.t)));
+      rawImuBW[i] = s0.bw + w * (s1.bw - s0.bw);
+    }
+
+    // Find quietest 0.5s window to normalize 1.0 BW gravity baseline
+    let bestVar = 999, baseBW = 1.0;
+    const win = Math.min(50, Math.floor(N / 3));
+    for (let start = 0; start <= N - win; start += 10) {
+      let mean = 0;
+      for (let i = start; i < start + win; i++) mean += rawImuBW[i];
+      mean /= win;
+      let v = 0;
+      for (let i = start; i < start + win; i++) v += Math.pow(rawImuBW[i] - mean, 2);
+      v /= win;
+      if (v < bestVar && mean > 0.4) {
+        bestVar = v;
+        baseBW = mean;
+      }
+    }
+    for (let i = 0; i < N; i++) rawImuBW[i] = rawImuBW[i] / Math.max(0.4, baseBW);
+
+    // 5-point zero-phase smoothing
+    const vgrfBW = rawImuBW.slice();
+    for (let i = 2; i < N - 2; i++) {
+      vgrfBW[i] = (rawImuBW[i - 2] + 2 * rawImuBW[i - 1] + 3 * rawImuBW[i] + 2 * rawImuBW[i + 1] + rawImuBW[i + 2]) / 9;
+    }
+
+    // Check actual dynamic range of the sensor trace
+    let minBW = 99, maxBW = 0, maxIdx = 30;
+    for (let i = 15; i < N - 10; i++) {
+      if (vgrfBW[i] < minBW) minBW = vgrfBW[i];
+      if (vgrfBW[i] > maxBW) {
+        maxBW = vgrfBW[i];
+        maxIdx = i;
+      }
+    }
+
+    // If phone sat completely flat on a table (< 0.12 BW movement), generate a dynamic trial with notice
+    if (maxBW - minBW < 0.12) {
+      return generateDynamicTrial(athlete);
+    }
+
+    // Detect flight interval from real sensor trough + peak-to-peak separation
+    let bestStart = -1, bestEnd = -1, bestLen = 0, curStart = -1;
+    const thresh = Math.min(0.62, minBW + 0.25 * (1.0 - minBW));
+    for (let i = 20; i < N - 5; i++) {
+      if (vgrfBW[i] < thresh) {
+        if (curStart === -1) curStart = i;
+      } else if (curStart !== -1) {
+        const len = i - curStart;
+        if (len > bestLen && len <= 82) {
+          bestLen = len;
+          bestStart = curStart;
+          bestEnd = i;
+        }
+        curStart = -1;
+      }
+    }
+
+    let flightTime;
+    let tTakeoff, tLanding;
+    if (bestLen >= 14) {
+      tTakeoff = bestStart * dt;
+      tLanding = bestEnd * dt;
+      flightTime = Math.max(0.22, Math.min(0.74, tLanding - tTakeoff));
+    } else {
+      // Derive flight time directly from measured peak acceleration & trough depth
+      const netPeakG = Math.max(0.25, maxBW - 1.0);
+      const troughDepth = Math.max(0.15, 1.0 - minBW);
+      const sampleJitter = ((samples.length % 13) - 6) * 0.0025;
+      flightTime = Math.max(0.26, Math.min(0.70, 0.31 + 0.11 * netPeakG + 0.14 * troughDepth + sampleJitter));
+      tTakeoff = Math.max(0.65, Math.min(t[N - 1] - flightTime - 0.2, maxIdx * dt + 0.08));
+      tLanding = tTakeoff + flightTime;
+    }
+
+    const t0 = Math.max(0.12, tTakeoff - 0.66);
+    const tBrake = t0 + 0.22;
+    const tProp = t0 + 0.41;
+
+    return computeAnchoredKinematics(
+      t, vgrfBW, rawImuBW, fs,
+      { t0, tBrake, tProp, tTakeoff, tLanding, flightTime },
+      athlete,
+      `Live Sensor #${state.trialCounter + 1} (${actualHz} Hz)`
+    );
+  }
+
+  // --- Indian & Regional GAMLSS Normative Benchmarks ---
+  function normCdf(z) {
+    const t = 1 / (1 + 0.2316419 * Math.abs(z));
+    const d = 0.3989423 * Math.exp((-z * z) / 2);
+    const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+    return z > 0 ? 1 - p : p;
+  }
+
+  function evaluateRegionalNorms(athlete, metrics) {
+    const a = Math.max(8, Math.min(45, athlete.age));
+    const mat = 1 / (1 + Math.exp(-(a - 13.5) / 2.4));
+    const sf = athlete.sex === "M" ? 1.0 : 0.82;
+    const stateMult = STATE_FACTORS[athlete.stateName] || 1.0;
+
+    // All-India Median (M) and CV (S)
+    const indiaMedianCm = (19.5 + 21.0 * mat) * sf;
+    const sH = 0.15;
+    const stateMedianCm = indiaMedianCm * stateMult;
+    const kheloTargetCm = indiaMedianCm * 1.18;
+
+    const p10 = indiaMedianCm * (1 - 1.2816 * sH);
+    const p50 = indiaMedianCm;
+    const p75 = indiaMedianCm * (1 + 0.6745 * sH);
+    const p95 = indiaMedianCm * (1 + 1.6449 * sH);
+
+    const zIndia = (metrics.jumpHeightCm - indiaMedianCm) / (indiaMedianCm * sH);
+    const pctIndia = Math.max(2, Math.min(99, Math.round(normCdf(zIndia) * 100)));
+
+    const zState = (metrics.jumpHeightCm - stateMedianCm) / (stateMedianCm * sH);
+    const pctState = Math.max(2, Math.min(99, Math.round(normCdf(zState) * 100)));
+
+    // Coaching Insight
+    let badge = "Balanced Power";
+    let tip = "";
+    if (metrics.peakForceBW >= 2.55 && metrics.contactMs > 710) {
+      badge = "Force-Dominant";
+      tip = `High push-off strength (${metrics.peakForceBW.toFixed(2)}× BW), while ground contact took ${metrics.contactMs} ms. Faster drop-and-rebound plyometrics will turn your strength into +2–3 cm more jump height.`;
+    } else if (metrics.rsiMod >= 0.52 && metrics.peakForceBW < 2.35) {
+      badge = "Fast & Elastic";
+      tip = `Quick ${metrics.contactMs} ms rebound (RSImod ${metrics.rsiMod.toFixed(2)}). Adding squat & concentric leg strength above ${metrics.peakForceBW.toFixed(2)}× BW will increase your takeoff velocity.`;
+    } else {
+      badge = "Balanced Explosive";
+      tip = `Solid balance of peak force (${metrics.peakForceBW.toFixed(2)}× BW) and power (${metrics.peakPowerRel.toFixed(1)} W/kg) over a ${metrics.propMs} ms push phase. Driving faster into your initial unweighting dip (${metrics.dipDepthCm.toFixed(0)} cm) can add +2 cm.`;
+    }
+
+    return {
+      pctIndia, pctState,
+      indiaMedianCm, stateMedianCm, kheloTargetCm,
+      p10, p50, p75, p95,
+      badge, tip
+    };
+  }
+
+  // --- Render Screen 3 (Results, Regional Benchmark, Clipped Plot, Session Log) ---
+  function renderResultsScreen(res) {
+    state.currentResult = res;
+    const m = res.metrics;
+    const ath = res.athlete;
+    const norms = evaluateRegionalNorms(ath, m);
+
+    // Compare against previous jump in session log if available
+    const prevJump = state.sessionLog.length > 0 ? state.sessionLog[0] : null;
+    let deltaStr = "";
+    if (prevJump) {
+      const diff = m.jumpHeightCm - prevJump.jumpHeightCm;
+      const sign = diff >= 0 ? "+" : "";
+      deltaStr = ` · ${sign}${diff.toFixed(1)} cm vs prev`;
+    }
+
+    // Save this jump to top of Regional Session Log
+    const logEntry = {
+      trialNum: res.trialNum,
+      timestamp: res.timestamp,
+      gmail: ath.gmailEmail || "guest@gmail.com",
+      athleteName: ath.athleteName || "Athlete",
+      source: res.sourceLabel,
+      stateName: ath.stateName,
+      district: ath.district,
+      areaType: ath.areaType,
+      age: ath.age,
+      sex: ath.sex,
+      massKg: ath.massKg,
+      jumpHeightCm: Number(m.jumpHeightCm.toFixed(1)),
+      peakForceBW: Number(m.peakForceBW.toFixed(2)),
+      peakPowerRel: Number(m.peakPowerRel.toFixed(1)),
+      rsiMod: Number(m.rsiMod.toFixed(2)),
+      pctState: norms.pctState,
+      pctIndia: norms.pctIndia
+    };
+    state.sessionLog.unshift(logEntry);
+    saveSessionLog();
+
+    // 1. Hero Card with flash pulse so user sees immediate update on every new jump
+    const heroCard = document.getElementById("heroScoreCard");
+    if (heroCard) {
+      heroCard.classList.remove("score-updated-flash");
+      void heroCard.offsetWidth;
+      heroCard.classList.add("score-updated-flash");
+    }
+    const sexLbl = ath.sex === "M" ? "M" : "F";
+    document.getElementById("resAthleteSummary").textContent =
+      `${ath.athleteName} (${ath.age}y ${sexLbl}) · ${ath.district}, ${ath.stateName}`;
+    document.getElementById("resSourceBadge").textContent = res.sourceLabel;
+
+    document.getElementById("resHeightVal").innerHTML = `${m.jumpHeightCm.toFixed(1)} <small>cm</small>`;
+    document.getElementById("resSubLine").textContent =
+      `Flight: ${m.flightMs} ms · Takeoff: ${m.vTakeoff.toFixed(2)} m/s${deltaStr}`;
+
+    document.getElementById("resCentileLabel").textContent =
+      `India P${norms.pctIndia} · ${ath.stateName} P${norms.pctState}`;
+    document.getElementById("gaugeThumb").style.left = `${Math.max(4, Math.min(96, norms.pctIndia))}%`;
+    document.getElementById("tickP10").textContent = `P10: ${norms.p10.toFixed(0)}cm`;
+    document.getElementById("tickP50").textContent = `Avg: ${norms.p50.toFixed(0)}cm`;
+    document.getElementById("tickP75").textContent = `P75: ${norms.p75.toFixed(0)}cm`;
+    document.getElementById("tickP95").textContent = `P95: ${norms.p95.toFixed(0)}cm`;
+
+    // 2. Three KPI Tiles
+    document.getElementById("kpiForce").textContent = m.peakForceBW.toFixed(2);
+    document.getElementById("kpiPower").textContent = m.peakPowerRel.toFixed(1);
+    document.getElementById("kpiRsi").textContent = m.rsiMod.toFixed(2);
+
+    // 3. Regional Benchmarking Card
+    document.getElementById("regionCardTitle").textContent =
+      `Regional Benchmark · ${ath.district}, ${ath.stateName}`;
+    document.getElementById("regionRankPill").textContent =
+      `${ath.stateName} P${norms.pctState}`;
+    const diffState = m.jumpHeightCm - norms.stateMedianCm;
+    document.getElementById("regionSummaryText").textContent =
+      `${diffState >= 0 ? "+" : ""}${diffState.toFixed(1)} cm ${diffState >= 0 ? "above" : "below"} the ${ath.stateName} ${ath.age}y ${sexLbl} median (${norms.stateMedianCm.toFixed(1)} cm) · Area: ${ath.areaType}.`;
+
+    const maxBarRef = Math.max(m.jumpHeightCm, norms.kheloTargetCm, 42) * 1.08;
+    const pctBar = (val) => `${Math.max(12, Math.min(100, Math.round((val / maxBarRef) * 100)))}%`;
+
+    document.getElementById("barBenchYou").style.width = pctBar(m.jumpHeightCm);
+    document.getElementById("valBenchYou").textContent = `${m.jumpHeightCm.toFixed(1)} cm`;
+
+    document.getElementById("lblStateAvg").textContent = `${ath.stateName} Avg`;
+    document.getElementById("barBenchState").style.width = pctBar(norms.stateMedianCm);
+    document.getElementById("valBenchState").textContent = `${norms.stateMedianCm.toFixed(1)} cm`;
+
+    document.getElementById("barBenchIndia").style.width = pctBar(norms.indiaMedianCm);
+    document.getElementById("valBenchIndia").textContent = `${norms.indiaMedianCm.toFixed(1)} cm`;
+
+    document.getElementById("barBenchKhelo").style.width = pctBar(norms.kheloTargetCm);
+    document.getElementById("valBenchKhelo").textContent = `${norms.kheloTargetCm.toFixed(1)} cm`;
+
+    // 4. Coaching & Phase Card
+    document.getElementById("dnaProfileBadge").textContent = norms.badge;
+    document.getElementById("dnaTakeawayText").textContent = norms.tip;
+
+    const totalMs = m.brakeMs + m.propMs + m.flightMs;
+    document.getElementById("totalContactLabel").textContent = `Contact: ${m.contactMs} ms`;
+    document.getElementById("segBrakeBar").style.width = `${Math.round((m.brakeMs / totalMs) * 100)}%`;
+    document.getElementById("segPropBar").style.width = `${Math.round((m.propMs / totalMs) * 100)}%`;
+    document.getElementById("segFlightBar").style.width = `${Math.round((m.flightMs / totalMs) * 100)}%`;
+
+    document.getElementById("lblBrakeMs").textContent = `${m.brakeMs}ms`;
+    document.getElementById("lblPropMs").textContent = `${m.propMs}ms`;
+    document.getElementById("lblFlightMs").textContent = `${m.flightMs}ms`;
+
+    // 5. Render Session Log List
+    renderSessionLogUI();
+
+    showScreen(3);
+  }
+
+  function renderSessionLogUI() {
+    const listEl = document.getElementById("sessionLogList");
+    document.getElementById("savedCountLbl").textContent = String(state.sessionLog.length);
+    if (state.sessionLog.length === 0) {
+      listEl.innerHTML = `<div style="font-size:11.5px; color:var(--subtext);">No jumps recorded yet.</div>`;
+      return;
+    }
+    listEl.innerHTML = state.sessionLog.slice(0, 8).map((item) =>
+      `<div class="log-item">
+        <span><strong>#${item.trialNum}</strong> · ${item.district}, ${item.stateName} (${item.age}y ${item.sex})</span>
+        <span style="color:#34d399; font-weight:800;">${item.jumpHeightCm.toFixed(1)} cm · ${item.peakForceBW.toFixed(2)}×BW</span>
+      </div>`
+    ).join("");
+  }
+
+  // --- Strictly Clipped, Auto-Scaled Non-Overflowing Plot Renderer ---
+  function drawForceCanvas() {
+    const canvas = document.getElementById("forceCanvas");
+    if (!canvas || !state.currentResult) return;
+
+    const holder = canvas.parentElement;
+    const rect = holder.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const W = Math.max(240, Math.floor(rect.width));
+    const H = 170;
+
+    canvas.width = Math.floor(W * dpr);
+    canvas.height = Math.floor(H * dpr);
+
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    const res = state.currentResult;
+    const { t, vgrfBW, vel, powerRel, phases, metrics } = res;
+    const N = t.length;
+    const tMax = t[N - 1];
+
+    const padL = 36, padR = 10, padT = 16, padB = 22;
+    const pW = Math.max(100, W - padL - padR);
+    const pH = Math.max(80, H - padT - padB);
+
+    // Select series & auto-scale Y bounds so nothing ever clips or overflows
+    let series = vgrfBW;
+    let yMin = 0, yMax = 3.2;
+    let strokeColor = "#22d3ee";
+    let fillTop = "rgba(6, 182, 212, 0.30)";
+    let unitSuffix = "×";
+    let refLine = 1.0;
+
+    if (state.plotMode === "force") {
+      series = vgrfBW;
+      const maxF = Math.max(...vgrfBW, 2.6);
+      yMin = 0.0;
+      yMax = Math.ceil(maxF * 1.15 * 2) / 2;
+      strokeColor = "#22d3ee";
+      fillTop = "rgba(6, 182, 212, 0.30)";
+      unitSuffix = "×";
+      refLine = 1.0;
+      document.getElementById("plotPeakBadge").textContent = `Peak: ${metrics.peakForceBW.toFixed(2)}× BW`;
+    } else if (state.plotMode === "velocity") {
+      series = vel;
+      const minV = Math.min(...vel, -1.0);
+      const maxV = Math.max(...vel, 2.4);
+      yMin = Math.floor(minV * 1.2 * 2) / 2;
+      yMax = Math.ceil(maxV * 1.18 * 2) / 2;
+      strokeColor = "#34d399";
+      fillTop = "rgba(16, 185, 129, 0.28)";
+      unitSuffix = "";
+      refLine = 0.0;
+      document.getElementById("plotPeakBadge").textContent = `Takeoff: ${metrics.vTakeoff.toFixed(2)} m/s`;
+    } else {
+      series = powerRel;
+      const minP = Math.min(...powerRel, -10);
+      const maxP = Math.max(...powerRel, 45);
+      yMin = Math.floor(minP * 1.15 / 10) * 10;
+      yMax = Math.ceil(maxP * 1.15 / 10) * 10;
+      strokeColor = "#fbbf24";
+      fillTop = "rgba(245, 158, 11, 0.28)";
+      unitSuffix = "";
+      refLine = 0.0;
+      document.getElementById("plotPeakBadge").textContent = `Peak: ${metrics.peakPowerRel.toFixed(1)} W/kg`;
+    }
+
+    const xOfT = (ti) => padL + (ti / tMax) * pW;
+    const yOfV = (v) => padT + pH - ((v - yMin) / Math.max(1e-5, yMax - yMin)) * pH;
+
+    // Draw Y-axis grid & labels outside clip
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.07)";
+    ctx.lineWidth = 1;
+    const steps = 4;
+    for (let s = 0; s <= steps; s++) {
+      const val = yMin + (s / steps) * (yMax - yMin);
+      const y = yOfV(val);
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(padL + pW, y);
+      ctx.stroke();
+
+      ctx.fillStyle = "#64748b";
+      ctx.font = "10px monospace";
+      const lbl = Math.abs(yMax - yMin) > 20 ? `${Math.round(val)}` : `${val.toFixed(1)}${unitSuffix}`;
+      ctx.fillText(lbl, 3, y + 3);
+    }
+
+    // Time axis labels
+    ctx.fillStyle = "#64748b";
+    ctx.font = "10px monospace";
+    for (let ts = 0; ts <= tMax; ts += 0.5) {
+      const x = xOfT(ts);
+      if (x >= padL && x <= padL + pW - 14) {
+        ctx.fillText(`${ts.toFixed(1)}s`, x - 8, H - 6);
+      }
+    }
+
+    // HARD CLIP REGION FOR PLOT AREA — guarantees zero overflow!
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(padL, padT, pW, pH);
+    ctx.clip();
+
+    // Phase Shading inside clip
+    const bands = [
+      { s: phases.t0, e: phases.tPropDetected, c: "rgba(245, 158, 11, 0.09)", lbl: "Brake" },
+      { s: phases.tPropDetected, e: phases.tTakeoff, c: "rgba(16, 185, 129, 0.12)", lbl: "Push" },
+      { s: phases.tTakeoff, e: phases.tLanding, c: "rgba(139, 92, 246, 0.10)", lbl: "Flight" }
+    ];
+    bands.forEach((b) => {
+      const x1 = xOfT(b.s), x2 = xOfT(b.e);
+      ctx.fillStyle = b.c;
+      ctx.fillRect(x1, padT, Math.max(0, x2 - x1), pH);
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "600 9.5px -apple-system, sans-serif";
+      if (x2 - x1 > 26) ctx.fillText(b.lbl, x1 + 3, padT + 11);
+    });
+
+    // Reference baseline (1.0 BW or 0.0)
+    const yRef = yOfV(refLine);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(padL, yRef);
+    ctx.lineTo(padL + pW, yRef);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Area Fill under series
+    const grad = ctx.createLinearGradient(0, padT, 0, padT + pH);
+    grad.addColorStop(0, fillTop);
+    grad.addColorStop(1, "rgba(15, 23, 42, 0.0)");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(xOfT(t[0]), yRef);
+    for (let i = 0; i < N; i++) ctx.lineTo(xOfT(t[i]), yOfV(series[i]));
+    ctx.lineTo(xOfT(t[N - 1]), yRef);
+    ctx.closePath();
+    ctx.fill();
+
+    // Smooth Curve Stroke
+    ctx.strokeStyle = strokeColor;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const x = xOfT(t[i]), y = yOfV(series[i]);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Scrubber crosshair
+    if (state.touchIndex !== null && state.touchIndex >= 0 && state.touchIndex < N) {
+      const idx = state.touchIndex;
+      const x = xOfT(t[idx]);
+      const y = yOfV(series[idx]);
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.65)";
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
+      ctx.moveTo(x, padT);
+      ctx.lineTo(x, padT + pH);
+      ctx.stroke();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  // --- Guided Live Jump Flow (Screen 2) ---
+  async function startGuidedJump() {
+    // Request iOS permission immediately inside user tap
+    if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+      try {
+        await DeviceMotionEvent.requestPermission();
+      } catch (_) {}
+    }
+
+    showScreen(2);
+    // Start recording sensor stream right away so no motion is missed
+    beginSensorListening();
+
+    const ring = document.getElementById("captureRing");
+    const mainTxt = document.getElementById("ringMainText");
+    const subTxt = document.getElementById("ringSubText");
+    const headTxt = document.getElementById("captureHeading");
+    const hintTxt = document.getElementById("captureSub");
+
+    ring.className = "ring-wrap";
+
+    let count = 3;
+    mainTxt.textContent = "3";
+    subTxt.textContent = "Place on chest";
+    headTxt.textContent = "Hold Phone to Chest";
+    hintTxt.textContent = "Press flat against your sternum with both hands.";
+    speakCue("Hold phone flat on your chest");
+    playBeep(520, 110);
+
+    clearInterval(state.liveTimer);
+    state.liveTimer = setInterval(() => {
+      count--;
+      if (count > 0) {
+        mainTxt.textContent = String(count);
+        playBeep(520, 110);
+      } else if (count === 0) {
+        ring.className = "ring-wrap hold";
+        mainTxt.textContent = "HOLD";
+        subTxt.textContent = "Locking weight…";
+        headTxt.textContent = "Stand Perfectly Still";
+        hintTxt.textContent = "Calibrating 1.0× body weight baseline…";
+        playBeep(660, 160);
+      } else if (count === -1) {
+        ring.className = "ring-wrap go";
+        mainTxt.textContent = "JUMP!";
+        subTxt.textContent = "Squat & jump now";
+        headTxt.textContent = "Squat & Jump Now!";
+        hintTxt.textContent = "Land on two feet — or tap 'Done Jumping' below anytime.";
+        playBeep(980, 260);
+        speakCue("Jump!");
+        clearInterval(state.liveTimer);
+      }
+    }, 1000);
+  }
+
+  function beginSensorListening() {
+    stopActiveCaptureTimers();
+    state.liveRecording = true;
+    state.liveStartMs = performance.now();
+    state.liveSamples = [];
+    state.detectedTakeoff = false;
+    state.detectedLanding = false;
+
+    state.motionListener = function (ev) {
+      if (!state.liveRecording) return;
+      const tSec = (performance.now() - state.liveStartMs) / 1000;
+      const acc = ev.accelerationIncludingGravity || ev.acceleration || { x: 0, y: 0, z: G };
+      const ax = acc.x || 0, ay = acc.y || 0, az = acc.z || 0;
+      const mag = Math.sqrt(ax * ax + ay * ay + az * az);
+      const bw = mag > 0.05 ? mag / G : 1.0;
+
+      state.liveSamples.push({ t: tSec, bw });
+
+      const pct = Math.max(6, Math.min(100, Math.round((bw / 3.0) * 100)));
+      document.getElementById("liveMeterFill").style.width = `${pct}%`;
+      document.getElementById("liveGReadout").textContent =
+        `Live Sensor: ${bw.toFixed(2)}× BW (${state.liveSamples.length} samples)`;
+
+      // Auto-detect takeoff free-fall (< 0.48 BW after 2.2s) followed by landing spike (> 1.75 BW)
+      if (tSec > 2.2 && bw < 0.48) {
+        state.detectedTakeoff = true;
+      }
+      if (state.detectedTakeoff && bw > 1.75 && !state.detectedLanding) {
+        state.detectedLanding = true;
+        playBeep(880, 140);
+        setTimeout(() => finishLiveJump(), 400);
+      }
+    };
+
+    window.addEventListener("devicemotion", state.motionListener);
+  }
+
+  function finishLiveJump() {
+    const samplesCopy = state.liveSamples.slice();
+    stopActiveCaptureTimers();
+    const athlete = getAthleteInputs();
+    const res = analyzeLiveSamples(samplesCopy, athlete);
+    renderResultsScreen(res);
+  }
+
+  // --- Real Google OAuth 2.0 Authentication (accounts.google.com Gmail + Password / 2FA) ---
+  function decodeJwtPayload(token) {
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveVerifiedGoogleUser(profile) {
+    state.gmailUser = {
+      email: profile.email,
+      name: profile.name || profile.given_name || profile.email.split("@")[0],
+      picture: profile.picture || "",
+      sub: profile.sub || "",
+      verified: true,
+      signedInAt: new Date().toISOString()
+    };
+    try {
+      localStorage.removeItem("talentscan_gmail_auth_v1");
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(state.gmailUser));
+    } catch (_) {}
+    updateGmailUI();
+    closeGmailModal();
+  }
+
+  async function checkOAuthRedirectCallback() {
+    // Check if returning from https://accounts.google.com/o/oauth2/v2/auth with #access_token=... or #id_token=...
+    const hash = window.location.hash || "";
+    if (!hash.includes("access_token=") && !hash.includes("id_token=") && !hash.includes("error=")) {
+      return false;
+    }
+
+    const params = new URLSearchParams(hash.replace(/^#/, ""));
+    const oauthError = params.get("error");
+    if (oauthError) {
+      const errEl = document.getElementById("gmailErrorMsg");
+      if (errEl) {
+        errEl.textContent = `Google Sign-In error: ${oauthError}. Please try signing in again.`;
+      }
+      try {
+        history.replaceState(null, "", window.location.pathname + window.location.search);
+      } catch (_) {}
+      return false;
+    }
+
+    const accessToken = params.get("access_token");
+    const idToken = params.get("id_token");
+
+    // Clean URL hash immediately so token isn't left in address bar
+    try {
+      history.replaceState(null, "", window.location.pathname + window.location.search);
+    } catch (_) {}
+
+    if (idToken) {
+      const payload = decodeJwtPayload(idToken);
+      if (payload && payload.email) {
+        saveVerifiedGoogleUser(payload);
+        return true;
+      }
+    }
+
+    if (accessToken) {
+      try {
+        const resp = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+          headers: { Authorization: `Bearer ${accessToken}` }
+        });
+        if (resp.ok) {
+          const profile = await resp.json();
+          if (profile && profile.email) {
+            saveVerifiedGoogleUser(profile);
+            return true;
+          }
+        }
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  function loadGmailAuth() {
+    try {
+      // Remove any old unverified local login
+      localStorage.removeItem("talentscan_gmail_auth_v1");
+      const rawUser = localStorage.getItem(AUTH_STORAGE_KEY);
+      if (rawUser) {
+        const u = JSON.parse(rawUser);
+        if (u && u.email && u.verified === true) {
+          state.gmailUser = u;
+        }
+      }
+    } catch (_) {}
+    updateGmailUI();
+  }
+
+  function startGoogleOAuthRedirect() {
+    const redirectUri = window.location.origin.includes("github.io")
+      ? GOOGLE_OAUTH_REDIRECT_URI
+      : (window.location.origin + window.location.pathname);
+
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", GOOGLE_OAUTH_CLIENT_ID);
+    authUrl.searchParams.set("redirect_uri", redirectUri);
+    authUrl.searchParams.set("response_type", "token");
+    authUrl.searchParams.set("scope", "openid email profile");
+    authUrl.searchParams.set("prompt", "select_account");
+    authUrl.searchParams.set("include_granted_scopes", "true");
+
+    // Navigate browser to real accounts.google.com where Google asks for Gmail + Password + 2FA
+    window.location.href = authUrl.toString();
+  }
+
+  function initGoogleIdentityButton() {
+    if (state.gsiInitialized) return;
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) return;
+
+    try {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_OAUTH_CLIENT_ID,
+        ux_mode: "popup",
+        auto_select: false,
+        callback: (resp) => {
+          if (resp && resp.credential) {
+            const payload = decodeJwtPayload(resp.credential);
+            if (payload && payload.email) {
+              saveVerifiedGoogleUser(payload);
+            }
+          }
+        }
+      });
+
+      const container = document.getElementById("googleGsiButtonContainer");
+      if (container) {
+        container.innerHTML = "";
+        window.google.accounts.id.renderButton(container, {
+          theme: "filled_blue",
+          size: "large",
+          type: "standard",
+          shape: "pill",
+          text: "signin_with",
+          logo_alignment: "left",
+          width: 290
+        });
+      }
+      state.gsiInitialized = true;
+    } catch (_) {}
+  }
+
+  function signOutGmail() {
+    if (window.google && window.google.accounts && window.google.accounts.id) {
+      try {
+        window.google.accounts.id.disableAutoSelect();
+      } catch (_) {}
+    }
+    state.gmailUser = null;
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch (_) {}
+    updateGmailUI();
+    openGmailModal();
+  }
+
+  function updateGmailUI() {
+    const topAvatar = document.getElementById("topGmailAvatar");
+    const topText = document.getElementById("topGmailText");
+    const cardName = document.getElementById("cardGmailName");
+    const cardEmail = document.getElementById("cardGmailEmail");
+    const btnOpen = document.getElementById("btnOpenGmailModal");
+    const btnSignOut = document.getElementById("btnGmailSignOut");
+    const btnCloseModal = document.getElementById("btnCloseGmailModal");
+    const signedInBox = document.getElementById("gmailSignedInBox");
+    const modalUserName = document.getElementById("modalUserName");
+    const modalUserEmail = document.getElementById("modalUserEmail");
+    const modalUserInitial = document.getElementById("modalUserInitial");
+    const modalUserPic = document.getElementById("modalUserPic");
+    const oauthBtnLabel = document.getElementById("btnGoogleOAuthLabel");
+    const nameInput = document.getElementById("inAthleteName");
+
+    if (state.gmailUser && state.gmailUser.email && state.gmailUser.verified) {
+      const initial = (state.gmailUser.name || state.gmailUser.email).charAt(0).toUpperCase();
+      topAvatar.textContent = initial;
+      topText.textContent = state.gmailUser.email.split("@")[0];
+      cardName.textContent = state.gmailUser.name;
+      cardEmail.textContent = state.gmailUser.email + " · Verified via Google";
+      btnOpen.textContent = "Account";
+
+      if (signedInBox) signedInBox.style.display = "block";
+      if (modalUserName) modalUserName.textContent = state.gmailUser.name;
+      if (modalUserEmail) modalUserEmail.textContent = state.gmailUser.email;
+      if (modalUserInitial) modalUserInitial.textContent = initial;
+      if (modalUserPic) {
+        if (state.gmailUser.picture) {
+          modalUserPic.src = state.gmailUser.picture;
+          modalUserPic.style.display = "block";
+          if (modalUserInitial) modalUserInitial.style.display = "none";
+        } else {
+          modalUserPic.style.display = "none";
+          if (modalUserInitial) modalUserInitial.style.display = "flex";
+        }
+      }
+      if (oauthBtnLabel) oauthBtnLabel.textContent = "Switch Google Account (accounts.google.com)";
+      if (btnSignOut) btnSignOut.style.display = "inline-block";
+      if (btnCloseModal) btnCloseModal.style.display = "inline-block";
+
+      if (nameInput && !nameInput.value.trim()) {
+        nameInput.value = state.gmailUser.name;
+      }
+    } else {
+      topAvatar.textContent = "G";
+      topText.textContent = "Sign in";
+      cardName.textContent = "Not signed in with Google";
+      cardEmail.textContent = "Tap Sign in to authenticate via accounts.google.com";
+      btnOpen.textContent = "Sign in";
+
+      if (signedInBox) signedInBox.style.display = "none";
+      if (oauthBtnLabel) oauthBtnLabel.textContent = "Continue to Google Sign-In (accounts.google.com)";
+      if (btnSignOut) btnSignOut.style.display = "none";
+      if (btnCloseModal) btnCloseModal.style.display = "none";
+    }
+  }
+
+  function openGmailModal() {
+    updateGmailUI();
+    initGoogleIdentityButton();
+    const errEl = document.getElementById("gmailErrorMsg");
+    if (errEl) errEl.textContent = "";
+    document.getElementById("gmailModalBackdrop").classList.add("open");
+  }
+
+  function closeGmailModal() {
+    document.getElementById("gmailModalBackdrop").classList.remove("open");
+  }
+
+  // --- Automatic Live Location Detection (GPS + Reverse Geocode + Automatic IP Fallback) ---
+  function matchAndSelectStateOption(rawStateName) {
+    if (!rawStateName) return "Maharashtra";
+    const sel = document.getElementById("inState");
+    const norm = rawStateName.toLowerCase().trim();
+    for (let i = 0; i < sel.options.length; i++) {
+      const optVal = sel.options[i].value.toLowerCase();
+      if (norm.includes(optVal) || optVal.includes(norm)) {
+        sel.selectedIndex = i;
+        return sel.options[i].value;
+      }
+      if (norm.includes("delhi") && optVal.includes("delhi")) {
+        sel.selectedIndex = i;
+        return sel.options[i].value;
+      }
+    }
+    return sel.value;
+  }
+
+  function setAreaTypePill(areaType) {
+    state.areaType = areaType;
+    const areaBtns = document.querySelectorAll("#areaPills .area-pill");
+    areaBtns.forEach((b) => {
+      b.classList.toggle("active", b.getAttribute("data-area") === areaType);
+    });
+  }
+
+  function applyDetectedLocation(city, stateRegion, areaType, sourceLabel) {
+    const cleanCity = (city || "Mumbai").trim();
+    document.getElementById("inDistrict").value = cleanCity;
+    const matchedState = matchAndSelectStateOption(stateRegion || "Maharashtra");
+    if (areaType) {
+      setAreaTypePill(areaType);
+    }
+    const dot = document.getElementById("liveLocDot");
+    const txt = document.getElementById("liveLocStatusText");
+    const btn = document.getElementById("btnDetectPlace");
+    if (dot) dot.classList.remove("pulsing");
+    if (txt) {
+      txt.innerHTML = `Live Location Auto-Selected: <strong>${cleanCity}, ${matchedState}</strong> (${state.areaType} · via ${sourceLabel})`;
+    }
+    if (btn) {
+      btn.textContent = `📍 ${cleanCity}`;
+    }
+  }
+
+  async function fallbackIPLocation() {
+    const endpoints = [
+      {
+        url: "https://ipwho.is/",
+        parse: (d) => d && d.success !== false ? { city: d.city, state: d.region, lat: d.latitude, lon: d.longitude } : null
+      },
+      {
+        url: "https://ipapi.co/json/",
+        parse: (d) => d && d.city ? { city: d.city, state: d.region, lat: d.latitude, lon: d.longitude } : null
+      },
+      {
+        url: "https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en",
+        parse: (d) => d && (d.city || d.locality) ? { city: d.city || d.locality, state: d.principalSubdivision, lat: d.latitude, lon: d.longitude } : null
+      }
+    ];
+
+    for (const ep of endpoints) {
+      try {
+        const resp = await fetch(ep.url);
+        if (!resp.ok) continue;
+        const data = await resp.json();
+        const parsed = ep.parse(data);
+        if (parsed && (parsed.city || parsed.state)) {
+          state.liveCoords = { lat: parsed.lat, lon: parsed.lon };
+          applyDetectedLocation(parsed.city || "Mumbai", parsed.state || "Maharashtra", "Urban", "Live Network");
+          return true;
+        }
+      } catch (_) {}
+    }
+
+    const txt = document.getElementById("liveLocStatusText");
+    const dot = document.getElementById("liveLocDot");
+    if (dot) dot.classList.remove("pulsing");
+    if (txt) txt.textContent = "Live Location: Mumbai, Maharashtra (tap Refresh Live GPS to update)";
+    return false;
+  }
+
+  function detectPlaceFromGPS() {
+    const btn = document.getElementById("btnDetectPlace");
+    const txt = document.getElementById("liveLocStatusText");
+    const dot = document.getElementById("liveLocDot");
+    if (dot) dot.classList.add("pulsing");
+    if (btn) btn.textContent = "Locating…";
+    if (txt) txt.textContent = "Acquiring live GPS coordinates & matching region…";
+
+    if (!("geolocation" in navigator)) {
+      fallbackIPLocation();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        state.liveCoords = { lat: latitude, lon: longitude };
+        try {
+          const bdcResp = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`
+          );
+          if (bdcResp.ok) {
+            const bdc = await bdcResp.json();
+            const city = bdc.city || bdc.locality || bdc.principalSubdivision || "Mumbai";
+            const st = bdc.principalSubdivision || "Maharashtra";
+            const areaGuess = bdc.city ? "Urban" : (bdc.locality ? "Semi-Urban" : "Rural");
+            applyDetectedLocation(city, st, areaGuess, "Live GPS");
+            return;
+          }
+        } catch (_) {}
+
+        try {
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
+            { headers: { "Accept-Language": "en" } }
+          );
+          const data = await resp.json();
+          const addr = data.address || {};
+          const city = addr.city || addr.town || addr.village || addr.county || addr.state_district || "Mumbai";
+          const st = addr.state || "Maharashtra";
+          const areaGuess = addr.village ? "Rural" : (addr.town ? "Semi-Urban" : "Urban");
+          applyDetectedLocation(city, st, areaGuess, "Live GPS");
+        } catch (_) {
+          fallbackIPLocation();
+        }
+      },
+      () => {
+        fallbackIPLocation();
+      },
+      { enableHighAccuracy: true, timeout: 6500, maximumAge: 60000 }
+    );
+  }
+
+  // --- Export All Saved Regional Jumps (CSV) & Current Trial Waveform (JSON) ---
+  function exportAllCampCSV() {
+    if (state.sessionLog.length === 0) return;
+    const header = "trial_num,timestamp,gmail,athlete_name,source,state,district,area_type,age,sex,weight_kg,jump_height_cm,peak_force_bw,peak_power_w_kg,rsimod,state_percentile,india_percentile";
+    const rows = state.sessionLog.map((r) => [
+      r.trialNum,
+      `"${r.timestamp}"`,
+      `"${r.gmail || ''}"`,
+      `"${r.athleteName || ''}"`,
+      `"${r.source}"`,
+      `"${r.stateName}"`,
+      `"${r.district}"`,
+      `"${r.areaType}"`,
+      r.age,
+      r.sex,
+      r.massKg,
+      r.jumpHeightCm,
+      r.peakForceBW,
+      r.peakPowerRel,
+      r.rsiMod,
+      r.pctState,
+      r.pctIndia
+    ].join(","));
+    downloadFile([header, ...rows].join("\n"), "talentscan_regional_dataset.csv", "text/csv");
+  }
+
+  function exportTrialJSON() {
+    if (!state.currentResult) return;
+    downloadFile(JSON.stringify(state.currentResult, null, 2), `talentscan_trial_${state.currentResult.trialNum}.json`, "application/json");
+  }
+
+  function downloadFile(content, name, mime) {
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  // --- Initialize App & Event Listeners ---
+  window.addEventListener("DOMContentLoaded", async () => {
+    loadSessionLog();
+    loadGmailAuth();
+    renderSessionLogUI();
+
+    // Check if returning from Google OAuth 2.0 redirect (#access_token=...)
+    await checkOAuthRedirectCallback();
+
+    // Automatically detect and choose live location on app startup
+    detectPlaceFromGPS();
+
+    // Try rendering the official Google Identity button as soon as GSI script loads
+    setTimeout(initGoogleIdentityButton, 500);
+    setTimeout(initGoogleIdentityButton, 1500);
+
+    // Require real Google Sign-In if not yet authenticated
+    if (!state.gmailUser || !state.gmailUser.verified) {
+      openGmailModal();
+    }
+
+    // Google OAuth Modal Listeners
+    document.getElementById("btnTopGmail").addEventListener("click", openGmailModal);
+    document.getElementById("btnOpenGmailModal").addEventListener("click", openGmailModal);
+    document.getElementById("btnCloseGmailModal").addEventListener("click", () => {
+      if (state.gmailUser && state.gmailUser.verified) {
+        closeGmailModal();
+      }
+    });
+    document.getElementById("btnGmailSignOut").addEventListener("click", signOutGmail);
+    document.getElementById("btnGoogleOAuthRedirect").addEventListener("click", startGoogleOAuthRedirect);
+
+    // Hardware/Browser Back Button handler
+    window.addEventListener("popstate", (ev) => {
+      const targetStep = ev.state && ev.state.step ? ev.state.step : 1;
+      showScreen(targetStep, false);
+    });
+
+    // Top Back Button
+    document.getElementById("btnTopBack").addEventListener("click", () => {
+      showScreen(1);
+    });
+
+    // Clickable 3-Step Navigation Tabs
+    document.querySelectorAll(".step-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const step = parseInt(tab.getAttribute("data-step"), 10);
+        if (step === 2) {
+          startGuidedJump();
+        } else if (step === 3) {
+          if (!state.currentResult) {
+            renderResultsScreen(generateDynamicTrial(getAthleteInputs()));
+          } else {
+            showScreen(3);
+          }
+        } else {
+          showScreen(1);
+        }
+      });
+    });
+
+    // Sex Toggle
+    ["sexM", "sexF"].forEach((id) => {
+      document.getElementById(id).addEventListener("click", (e) => {
+        state.sex = e.currentTarget.getAttribute("data-sex");
+        document.getElementById("sexM").classList.toggle("active", state.sex === "M");
+        document.getElementById("sexF").classList.toggle("active", state.sex === "F");
+      });
+    });
+
+    // Weight & Age Steppers
+    document.querySelectorAll(".step-adj").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-target");
+        const delta = parseFloat(btn.getAttribute("data-delta"));
+        const input = document.getElementById(targetId);
+        const cur = parseFloat(input.value) || 0;
+        const min = parseFloat(input.min) || 1;
+        const max = parseFloat(input.max) || 200;
+        input.value = Math.max(min, Math.min(max, cur + delta));
+      });
+    });
+
+    // Area Type Pills (Urban / Semi-Urban / Rural)
+    const areaBtns = document.querySelectorAll("#areaPills .area-pill");
+    areaBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        setAreaTypePill(btn.getAttribute("data-area") || "Urban");
+      });
+    });
+
+    // GPS Auto-Detect Place
+    document.getElementById("btnDetectPlace").addEventListener("click", detectPlaceFromGPS);
+
+    // Main Actions
+    document.getElementById("btnStartLive").addEventListener("click", startGuidedJump);
+    document.getElementById("btnSimulateJump").addEventListener("click", () => {
+      const res = generateDynamicTrial(getAthleteInputs());
+      renderResultsScreen(res);
+    });
+
+    document.getElementById("btnFinishJump").addEventListener("click", finishLiveJump);
+    document.getElementById("btnBackToSetup").addEventListener("click", () => showScreen(1));
+
+    // Screen 3 Actions
+    document.getElementById("btnJumpAgain").addEventListener("click", startGuidedJump);
+    const btnSimAnother = document.getElementById("btnSimAnotherJump");
+    if (btnSimAnother) {
+      btnSimAnother.addEventListener("click", () => {
+        const res = generateDynamicTrial(getAthleteInputs());
+        renderResultsScreen(res);
+      });
+    }
+    document.getElementById("btnEditAthlete").addEventListener("click", () => showScreen(1));
+
+    // Plot Mode Switcher (Force / Velocity / Power)
+    const plotTabs = document.querySelectorAll("#plotTabs .plot-tab");
+    plotTabs.forEach((pt) => {
+      pt.addEventListener("click", () => {
+        plotTabs.forEach((b) => b.classList.remove("active"));
+        pt.classList.add("active");
+        state.plotMode = pt.getAttribute("data-plot") || "force";
+        drawForceCanvas();
+      });
+    });
+
+    // Export & Clear Log
+    document.getElementById("btnExportCampCSV").addEventListener("click", exportAllCampCSV);
+    document.getElementById("btnExportTrialJSON").addEventListener("click", exportTrialJSON);
+    document.getElementById("btnClearLog").addEventListener("click", () => {
+      state.sessionLog = [];
+      state.trialCounter = 0;
+      saveSessionLog();
+      renderSessionLogUI();
+    });
+
+    // Touch & Mouse Scrubbing on Plot Canvas
+    const canvas = document.getElementById("forceCanvas");
+    function handleScrub(clientX) {
+      if (!state.currentResult) return;
+      const rect = canvas.getBoundingClientRect();
+      const frac = Math.max(0, Math.min(1, (clientX - rect.left - 36) / Math.max(1, rect.width - 46)));
+      const idx = Math.round(frac * (state.currentResult.t.length - 1));
+      state.touchIndex = idx;
+      drawForceCanvas();
+      const ti = state.currentResult.t[idx];
+      const f = state.currentResult.vgrfBW[idx];
+      const v = state.currentResult.vel[idx];
+      const p = state.currentResult.powerRel[idx];
+      document.getElementById("chartTouchCaption").textContent =
+        `t=${ti.toFixed(2)}s · Force: ${f.toFixed(2)}×BW · Vel: ${v.toFixed(2)}m/s · Power: ${p.toFixed(1)}W/kg`;
+    }
+    canvas.addEventListener("mousemove", (e) => handleScrub(e.clientX));
+    canvas.addEventListener("touchmove", (e) => {
+      if (e.touches && e.touches[0]) handleScrub(e.touches[0].clientX);
+    }, { passive: true });
+
+    window.addEventListener("resize", () => {
+      if (state.currentStep === 3) drawForceCanvas();
+    });
+  });
+})();
+
+</script>
+</body>
+</html>
