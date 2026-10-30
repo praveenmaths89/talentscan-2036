@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "pa",
+    "name": "Punjabi",
+    "nativeName": "ਪੰਜਾਬੀ",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

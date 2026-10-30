@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "te",
+    "name": "Telugu",
+    "nativeName": "తెలుగు",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "or",
+    "name": "Odia",
+    "nativeName": "ଓଡ଼ିଆ",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

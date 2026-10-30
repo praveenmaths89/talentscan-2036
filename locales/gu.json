@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "gu",
+    "name": "Gujarati",
+    "nativeName": "ગુજરાતી",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

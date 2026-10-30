@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "mni",
+    "name": "Manipuri",
+    "nativeName": "ꯃꯤꯇꯩꯂꯣꯟ",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

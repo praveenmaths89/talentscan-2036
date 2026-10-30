@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "kn",
+    "name": "Kannada",
+    "nativeName": "ಕನ್ನಡ",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}
