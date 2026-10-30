@@ -42,6 +42,6 @@ test("install name matches the app name constant", () => {
   const manifest = read("../manifest.json");
   assert.equal(manifest.name, APP_NAME);
   assert.equal(manifest.short_name, APP_NAME);
-  assert.equal(manifest.theme_color, "#0F5E5A");
-  assert.equal(manifest.background_color, "#F4F7F6");
+  assert.equal(manifest.theme_color, "#1D4ED8");
+  assert.equal(manifest.background_color, "#F8FAFC");
 });

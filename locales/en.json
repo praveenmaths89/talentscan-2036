@@ -353,5 +353,7 @@
   "text.size": "Text size",
   "text.normal": "Normal",
   "text.large": "Large",
-  "text.help": "Large text is easier to read. You can change it any time."
+  "text.help": "Large text is easier to read. You can change it any time.",
+  "results.next": "Next: share this card, look at your progress, or try another test.",
+  "results.another": "Try another test"
 }
