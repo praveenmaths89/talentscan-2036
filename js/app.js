@@ -1047,6 +1047,7 @@ function onClick(event) {
   const act = btn.dataset.act;
   if (act === "buddy" || act === "rt-pad" || act === "tap") return;
   if (act === "goto") {
+    if (ui.screen === "test" && ui.flow?.card === "do") return;
     ui.stuck = false;
     return go(btn.dataset.to);
   }
