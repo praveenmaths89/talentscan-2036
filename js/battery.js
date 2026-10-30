@@ -11,6 +11,7 @@ import {
   median,
   sprintResult,
   shuttleResult,
+  stepSignal,
   synthesizeBalance,
   synthesizeCmjSamples,
   synthesizePpg,
@@ -174,9 +175,29 @@ export function sampleStep() {
 
 export function liveSteps(samples) {
   const fs = estimateFs(samples) || 50;
-  const signal = samples.map((s) => (s.az != null ? Number(s.az) : Number(s.bw) || 0));
-  const steps = countReps(signal, fs, { minIntervalS: 0.35, minProminence: 0.6 });
-  return { steps, ok: steps >= 8, reason: steps >= 8 ? null : "step" };
+  if (samples?.length > 20 && fs < 12) return { steps: 0, ok: false, reason: "low_rate", sampleHz: fs };
+  const signal = stepSignal(samples);
+  const steps = countReps(signal, fs, { minIntervalS: 0.35, minProminence: 1.2 });
+  return { steps, ok: steps >= 8, reason: steps >= 8 ? null : "step", sampleHz: fs };
+}
+
+/** Best, mean, and whether two or more trials agree within 25%. */
+export function summarizeAttempts(values, pick = "max") {
+  const nums = (values || []).map(Number).filter((n) => Number.isFinite(n));
+  if (!nums.length) return { value: null, mean: null, consistent: false, spread: null, count: 0, unreliable: true };
+  const mean = nums.reduce((a, b) => a + b, 0) / nums.length;
+  const spread = nums.length < 2 ? null : (Math.max(...nums) - Math.min(...nums)) / Math.max(1e-6, Math.abs(mean));
+  const consistent = nums.length >= 2 && spread <= 0.25;
+  let value = mean;
+  if (pick === "max") value = Math.max(...nums);
+  if (pick === "min") value = Math.min(...nums);
+  return { value, mean, consistent, spread, count: nums.length, unreliable: !consistent };
+}
+
+export function qualityOf(result) {
+  if (!result || result.skipped || result.sample) return "none";
+  if (!result.ok || result.unreliable || result.consistent === false || result.quality === "retry") return "retry";
+  return "good";
 }
 
 export function withPercentile(result, athlete) {

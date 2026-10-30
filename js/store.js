@@ -35,7 +35,11 @@ export function blankState() {
     pendingInvite: null,
     inProgress: null,
     lang: null,
-    askedLang: false
+    askedLang: false,
+    voiceOn: true,
+    textSize: "normal",
+    area: null,
+    areaChoice: null
   };
 }
 
