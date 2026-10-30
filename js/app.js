@@ -710,7 +710,10 @@ function viewResults() {
   const session = db.sessions.find((s) => s.id === ui.lastSessionId) || db.sessions.find((s) => s.athleteId === db.currentUserId);
   const who = user();
   if (!session || !who) {
-    return shell(`<section data-screen="results"><h1>${esc(t("results.title"))}</h1><p>${esc(t("results.empty"))}</p></section>`, { back: true });
+    return shell(
+      `<section data-screen="results"><h1>${esc(t("results.title"))}</h1><p>${esc(t("results.empty"))}</p><button type="button" class="btn primary xl" data-act="start">${esc(t("home.start"))}</button></section>`,
+      { back: true }
+    );
   }
   const blocks = Object.entries(session.tests)
     .filter(([, v]) => v && !v.skipped)
@@ -726,6 +729,10 @@ function viewResults() {
       <p class="pill ${who.verification === "centre-verified" ? "centre" : ""}">${esc(status)}</p>
       <h1>${esc(t("results.title"))}</h1>
       <p class="lead">${esc(who.name)} · ${esc(String(who.age))} ${esc(t("common.years"))}${who.sport ? " · " + esc(t("sports." + who.sport)) : ""}</p>
+      <p class="note">${esc(t("results.next"))}</p>
+      <button type="button" class="btn primary xl" data-act="share">${esc(t("results.share"))}</button>
+      <button type="button" class="btn ghost" data-act="goto" data-to="timeline">${esc(t("timeline.title"))}</button>
+      <button type="button" class="btn ghost" data-act="goto" data-to="battery">${esc(t("results.another"))}</button>
       <div class="disclaimer box">${esc(t("results.disclaimer"))}</div>
       ${session.hasSample ? `<p class="note">${esc(t("results.sampleNote"))}</p>` : ""}
       ${mature}
@@ -736,7 +743,7 @@ function viewResults() {
       <button type="button" class="btn primary xl" data-act="share">${esc(t("results.share"))}</button>
       <button type="button" class="btn ghost" data-act="goto" data-to="timeline">${esc(t("timeline.title"))}</button>
     </section>`,
-    { back: true, title: t("results.title") }
+    { back: true }
   );
 }
 
@@ -1867,18 +1874,18 @@ function drawCard(session, who) {
   canvas.width = 720;
   canvas.height = 960;
   const g = canvas.getContext("2d");
-  g.fillStyle = "#F7FAFC";
+  g.fillStyle = "#F8FAFC";
   g.fillRect(0, 0, 720, 960);
-  g.fillStyle = "#0D9488";
+  g.fillStyle = "#1D4ED8";
   g.fillRect(0, 0, 720, 180);
   g.fillStyle = "#ffffff";
-  g.font = "800 56px Nunito, sans-serif";
+  g.font = "800 56px Inter, sans-serif";
   g.fillText(displayName(), 48, 110);
-  g.fillStyle = "#134E4A";
-  g.font = "700 36px Nunito, sans-serif";
+  g.fillStyle = "#0F172A";
+  g.font = "700 36px Inter, sans-serif";
   g.fillText(who.name, 48, 260);
-  g.font = "600 24px Nunito, sans-serif";
-  g.fillStyle = "#5B6B73";
+  g.font = "600 24px Inter, sans-serif";
+  g.fillStyle = "#475569";
   let y = 330;
   for (const [id, result] of Object.entries(session.tests)) {
     if (!result || result.skipped) continue;
@@ -2059,12 +2066,12 @@ function icon(name) {
 function art(name) {
   if (["hero", "hold", "cmj", "repeat", "balance", "situp", "step"].includes(name)) {
     return `<svg viewBox="0 0 160 140" class="art" aria-hidden="true">
-      <rect x="18" y="108" width="124" height="10" rx="5" fill="#99f6e4"/>
-      <circle cx="78" cy="28" r="12" fill="#0D9488"/>
-      <path d="M78 40 v28" stroke="#134E4A" stroke-width="6" stroke-linecap="round"/>
-      <path d="M78 50 l-22 16M78 50 l18 10" stroke="#134E4A" stroke-width="6" stroke-linecap="round"/>
-      <path d="M78 68 l-16 32M78 68 l14 32" stroke="#0F766E" stroke-width="6" stroke-linecap="round"/>
-      <rect x="92" y="46" width="16" height="28" rx="3" fill="#F59E0B"/>
+      <rect x="18" y="108" width="124" height="10" rx="5" fill="var(--line)"/>
+      <circle cx="78" cy="28" r="12" fill="var(--primary)"/>
+      <path d="M78 40 v28" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M78 50 l-22 16M78 50 l18 10" stroke="var(--ink)" stroke-width="6" stroke-linecap="round"/>
+      <path d="M78 68 l-16 32M78 68 l14 32" stroke="var(--primary)" stroke-width="6" stroke-linecap="round"/>
+      <rect x="92" y="46" width="16" height="28" rx="3" fill="var(--mark)"/>
     </svg>`;
   }
   return `<div class="art-fallback">${icon(name)}</div>`;

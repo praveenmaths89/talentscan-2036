@@ -35,23 +35,25 @@ Light UI. Text and buttons meet WCAG AA contrast on the surfaces below. Spacing 
 
 | Token | Value | Use |
 | --- | --- | --- |
-| `--bg` | `#F4F7F6` | Page background, soft off-white |
+| `--bg` | `#F8FAFC` | Page background, soft white |
 | `--surface` | `#FFFFFF` | Cards |
-| `--ink` | `#1B2430` | Primary text |
-| `--muted` | `#5E6A75` | Secondary text |
-| `--primary` | `#0F5E5A` | Deep teal buttons and links. White text on this colour |
-| `--accent` | `#E07A3D` | Saffron highlight, focus ring, phone in the demos |
-| `--accent-ink` | `#9A3412` | Warning text |
-| `--good` | `#1F7A4D` | Good quality badge |
-| `--danger` | `#B42318` | Errors |
-| `--line` | `#E2E8E6` | Borders |
+| `--ink` | `#0F172A` | Primary text |
+| `--muted` | `#475569` | Secondary text |
+| `--primary` | `#1D4ED8` | The only brand colour. Buttons, links, and the figure |
+| `--tint` | `#EFF6FF` | Quiet blue wash behind icons and notes |
+| `--mark` | `#93C5FD` | The phone in the drawings, same blue family |
+| `--good` | `#047857` | Good quality badge only |
+| `--warn` | `#B45309` | Heat, air, and retry warnings only |
+| `--danger` | `#B91C1C` | Errors only |
+| `--line` | `#E2E8F0` | Borders |
 | `--radius` | `16px` | Cards and buttons |
-| `--shadow` | `0 8px 24px rgba(27, 36, 48, 0.08)` | Soft card shadow |
-| `--space` | `8px` | Base spacing step |
+| `--shadow` | `0 1px 2px rgba(15, 23, 42, 0.06)` | One soft shadow |
+
+Two other light palettes were tried and not shipped. Warm ivory with indigo `#4338CA` and a coral mark, or light sage with deep green `#1B6B45` and amber. The blue set is the one on the live app because it uses a single action colour.
 
 The same primary, background, and accent live in `THEME` in `js/config.js` and in the install manifest.
 
-Type is Inter at 18px body, 32px titles, and 18–20px buttons that are at least 56px tall. Line height is 1.5. A **Normal / Large** control (also the A / A+ button) is remembered on the phone. Indic languages use Noto Sans and render about 8% larger so Devanagari, Tamil, Bengali, and the other scripts stay readable.
+Type is Inter at 18px body, 32px titles, and 18–20px buttons that are at least 56px tall. Line height is 1.5. A **Normal / Large** control is remembered on the phone. Indic languages use Noto Sans and render about 8% larger so Devanagari, Tamil, Bengali, and the other scripts stay readable.
 
 ## Phone check
 

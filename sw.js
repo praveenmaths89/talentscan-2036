@@ -1,4 +1,4 @@
-const CACHE = "kheltara-shell-v4";
+const CACHE = "kheltara-shell-v5";
 const SHELL = [
   "./",
   "./index.html",
