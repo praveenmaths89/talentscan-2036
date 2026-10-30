@@ -1,4 +1,4 @@
-import { G, sampleToBw } from "./signal.js";
+import { G } from "./signal.js";
 
 export function motionPermissionKind() {
   const DME = typeof DeviceMotionEvent !== "undefined" ? DeviceMotionEvent : null;
@@ -7,45 +7,87 @@ export function motionPermissionKind() {
   return "none";
 }
 
-/** iOS Safari requires a user gesture. Android Chrome does not. */
+export function sensorSupport() {
+  const kind = motionPermissionKind();
+  const secure = typeof window === "undefined" || window.isSecureContext !== false;
+  return {
+    kind,
+    secure,
+    available: kind !== "none" && secure
+  };
+}
+
+/**
+ * iOS Safari only shows the motion prompt from a user gesture.
+ * Call this directly inside the tap handler, before any other await.
+ */
 export async function requestMotionPermission() {
+  const support = sensorSupport();
+  if (!support.secure) return "insecure";
+  if (support.kind === "none") return "unavailable";
+  const asks = [];
   const DME = typeof DeviceMotionEvent !== "undefined" ? DeviceMotionEvent : null;
-  if (DME && typeof DME.requestPermission === "function") {
-    try {
-      return await DME.requestPermission();
-    } catch {
-      return "denied";
-    }
+  const DOE = typeof DeviceOrientationEvent !== "undefined" ? DeviceOrientationEvent : null;
+  if (DME && typeof DME.requestPermission === "function") asks.push(DME.requestPermission());
+  if (DOE && typeof DOE.requestPermission === "function") asks.push(DOE.requestPermission());
+  if (!asks.length) return "granted";
+  try {
+    const results = await Promise.all(asks);
+    return results.includes("denied") ? "denied" : "granted";
+  } catch {
+    return "denied";
   }
-  return "granted";
+}
+
+function finiteOrNull(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+export function sampleFromEvent(ev, t) {
+  const withG = ev?.accelerationIncludingGravity;
+  const linear = ev?.acceleration;
+  const gx = finiteOrNull(withG?.x);
+  const gy = finiteOrNull(withG?.y);
+  const gz = finiteOrNull(withG?.z);
+  const hasG = gx != null || gy != null || gz != null;
+  const lx = finiteOrNull(linear?.x);
+  const ly = finiteOrNull(linear?.y);
+  const lz = finiteOrNull(linear?.z);
+  const rot = ev?.rotationRate || {};
+  if (!hasG && lx == null && ly == null && lz == null) {
+    return { t, missing: true, noGravity: true, ax: 0, ay: 0, az: 0, gx: finiteOrNull(rot.alpha), gy: finiteOrNull(rot.beta), gz: finiteOrNull(rot.gamma) };
+  }
+  const sample = {
+    t,
+    missing: false,
+    noGravity: !hasG,
+    ax: hasG ? gx || 0 : lx || 0,
+    ay: hasG ? gy || 0 : ly || 0,
+    az: hasG ? gz || 0 : lz || 0,
+    gx: finiteOrNull(rot.alpha),
+    gy: finiteOrNull(rot.beta),
+    gz: finiteOrNull(rot.gamma),
+    intervalMs: Number.isFinite(ev?.interval) ? ev.interval : null
+  };
+  return sample;
 }
 
 export function startMotionRecording() {
   const samples = [];
-  const start = performance.now();
+  const start = typeof performance !== "undefined" ? performance.now() : Date.now();
   let live = true;
   const handler = (ev) => {
     if (!live) return;
-    const acc = ev.accelerationIncludingGravity || ev.acceleration || { x: 0, y: 0, z: G };
-    const rot = ev.rotationRate || {};
-    const sample = {
-      t: (performance.now() - start) / 1000,
-      ax: acc.x || 0,
-      ay: acc.y || 0,
-      az: acc.z || 0,
-      gx: rot.alpha || 0,
-      gy: rot.beta || 0,
-      gz: rot.gamma || 0
-    };
-    sample.bw = sampleToBw(sample);
-    samples.push(sample);
+    const now = typeof performance !== "undefined" ? performance.now() : Date.now();
+    samples.push(sampleFromEvent(ev, (now - start) / 1000));
   };
-  window.addEventListener("devicemotion", handler);
+  if (typeof window !== "undefined") window.addEventListener("devicemotion", handler);
   return {
     samples,
     stop() {
       live = false;
-      window.removeEventListener("devicemotion", handler);
+      if (typeof window !== "undefined") window.removeEventListener("devicemotion", handler);
       return samples;
     }
   };
@@ -65,7 +107,7 @@ export function haversineMeters(a, b) {
 }
 
 export function watchGps(onFix) {
-  if (!navigator.geolocation) return { stop() {} };
+  if (typeof navigator === "undefined" || !navigator.geolocation) return { stop() {} };
   const id = navigator.geolocation.watchPosition(
     (pos) => {
       onFix({
@@ -83,3 +125,28 @@ export function watchGps(onFix) {
     }
   };
 }
+
+let wakeLock = null;
+
+export async function holdScreenAwake() {
+  try {
+    if (typeof navigator !== "undefined" && navigator.wakeLock?.request) {
+      wakeLock = await navigator.wakeLock.request("screen");
+      return true;
+    }
+  } catch {
+    /* older browsers and denied locks still let the test run */
+  }
+  return false;
+}
+
+export function releaseScreenAwake() {
+  try {
+    wakeLock?.release?.();
+  } catch {
+    /* ignore */
+  }
+  wakeLock = null;
+}
+
+export { G };

@@ -178,11 +178,58 @@ export function mirwaldMaturityOffset(person) {
 
 export function qcCmj({ flightS, sampleHz, stillStd, flightGyroRms }) {
   const errors = [];
-  if (!(Number(sampleHz) >= 20)) errors.push("low_rate");
-  if (!(flightS >= 0.2 && flightS <= 0.8)) errors.push("unclear");
-  if (stillStd != null && stillStd > 0.35) errors.push("shake");
-  if (flightGyroRms != null && flightGyroRms > 6) errors.push("knees");
-  return { pass: errors.length === 0, errors };
+  const warnings = [];
+  // 15 Hz still shows a 0.25 s flight. 20 Hz used to fail normal phone WebViews.
+  if (!(Number(sampleHz) >= 15)) errors.push("low_rate");
+  else if (Number(sampleHz) < 25) warnings.push("low_rate");
+  if (!(flightS >= 0.2 && flightS <= 0.85)) errors.push("unclear");
+  // Hands on the chest are never as quiet as a lab mount.
+  if (stillStd != null && stillStd > 0.9) errors.push("shake");
+  else if (stillStd != null && stillStd > 0.45) warnings.push("shake");
+  // rotationRate is degrees per second. 6 deg/s rejected almost every real jump.
+  if (flightGyroRms != null && flightGyroRms > 220) errors.push("knees");
+  return { pass: errors.length === 0, errors, warnings };
+}
+
+/**
+ * Phones report accelerationIncludingGravity in m/s^2 or, more rarely, in g.
+ * The quiet part of a trace sits near 1 g. Scale g-unit traces up to m/s^2.
+ */
+export function normalizeSamples(samples) {
+  const list = Array.isArray(samples) ? samples : [];
+  const mags = [];
+  for (const s of list) {
+    const m = Math.hypot(Number(s?.ax) || 0, Number(s?.ay) || 0, Number(s?.az) || 0);
+    if (m > 0.05) mags.push(m);
+  }
+  if (mags.length < 5) return list.map((s) => ({ ...s }));
+  const sorted = mags.slice().sort((a, b) => a - b);
+  const p70 = sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * 0.7))];
+  const unit = p70 >= 0.55 && p70 <= 2.8 ? "g" : "mps2";
+  const scale = unit === "g" ? G / p70 : 1;
+  return list.map((s) => ({
+    ...s,
+    ax: (Number(s?.ax) || 0) * scale,
+    ay: (Number(s?.ay) || 0) * scale,
+    az: (Number(s?.az) || 0) * scale,
+    unit
+  }));
+}
+
+export function samplingStats(samples) {
+  const list = samples || [];
+  const fs = estimateFs(list);
+  const missing = list.filter((s) => s?.missing).length;
+  const noGravity = list.filter((s) => s?.noGravity).length > list.length * 0.5 && list.length > 0;
+  return { fs, count: list.length, missing, noGravity };
+}
+
+/** Magnitude in body weights. Ignores which way the phone faces. */
+export function magnitudeBw(sample) {
+  if (sample && Number.isFinite(sample.bw)) return sample.bw;
+  const mag = Math.hypot(Number(sample?.ax) || 0, Number(sample?.ay) || 0, Number(sample?.az) || 0);
+  if (!(mag > 0.05)) return 1;
+  return mag > 4 ? mag / G : mag;
 }
 
 export function sampleToBw(sample) {
@@ -337,6 +384,11 @@ function gyroRmsDuring(samples, t0, tStart, tEnd) {
 /** Single CMJ from a phone held on the chest. Refuses a flat or missing trace. */
 export function analyzeCmjSamples(samples, athlete = {}) {
   if (!samples || samples.length < 15) return { ok: false, reason: "short" };
+  if (samples.filter((s) => s?.noGravity).length > samples.length * 0.5) {
+    return { ok: false, reason: "nograv" };
+  }
+  samples = normalizeSamples(samples);
+  const stats = samplingStats(samples);
   const series = resampleSeries(samples, sampleToBw, 100);
   const fs = series.fs;
   const dt = series.t.length > 1 ? series.t[1] - series.t[0] : 0.01;
@@ -374,45 +426,19 @@ export function analyzeCmjSamples(samples, athlete = {}) {
     if (rawImuBW[i] < minBW) minBW = rawImuBW[i];
     if (rawImuBW[i] > maxBW) maxBW = rawImuBW[i];
   }
-  if (!(maxBW - minBW >= 0.12)) return { ok: false, reason: "flat" };
+  if (!(maxBW - minBW >= 0.12)) return { ok: false, reason: "flat", sampleHz: series.sampleHz };
 
-  let bestStart = -1;
-  let bestEnd = -1;
-  let bestLen = 0;
-  let curStart = -1;
-  const thresh = Math.min(0.62, minBW + 0.25 * (1 - minBW));
-  const maxFlightSamples = Math.round(0.82 / dt);
-  for (let i = Math.min(20, N - 1); i < N - 2; i++) {
-    if (rawImuBW[i] < thresh) {
-      if (curStart === -1) curStart = i;
-    } else if (curStart !== -1) {
-      const len = i - curStart;
-      if (len > bestLen && len <= maxFlightSamples) {
-        bestLen = len;
-        bestStart = curStart;
-        bestEnd = i;
-      }
-      curStart = -1;
-    }
-  }
-  if (curStart !== -1) {
-    const len = N - 2 - curStart;
-    if (len > bestLen && len <= maxFlightSamples) {
-      bestLen = len;
-      bestStart = curStart;
-      bestEnd = N - 2;
-    }
-  }
-
+  const windows = detectFlightWindows(rawImuBW, fs).filter((w) => w.flightS >= 0.18 && w.flightS <= 0.85);
+  const best = windows.reduce((a, b) => (b.flightS > a.flightS ? b : a), windows[0]);
   let flightTime = 0;
   let tTakeoff = 0;
   let tLanding = 0;
   let detected = false;
-  if (bestLen >= Math.max(8, Math.round(0.14 / dt))) {
-    tTakeoff = t[bestStart];
-    tLanding = t[Math.min(N - 1, bestEnd)];
+  if (best) {
+    tTakeoff = t[Math.min(N - 1, best.start)];
+    tLanding = t[Math.min(N - 1, best.end)];
     flightTime = tLanding - tTakeoff;
-    detected = flightTime >= 0.2 && flightTime <= 0.8;
+    detected = flightTime >= 0.2 && flightTime <= 0.85;
   }
   if (!detected) {
     return {
@@ -449,7 +475,7 @@ export function analyzeCmjSamples(samples, athlete = {}) {
     detected: true,
     flightS: flightTime,
     jumpHeightCm,
-    sampleHz: series.sampleHz,
+    sampleHz: series.sampleHz || stats.fs,
     stillStd,
     qc,
     pinn: kin.metrics,
@@ -460,17 +486,36 @@ export function analyzeCmjSamples(samples, athlete = {}) {
 export function detectFlightWindows(bw, fs) {
   if (!bw?.length || !(fs > 0)) return [];
   let minBW = Infinity;
-  for (const v of bw) if (v < minBW) minBW = v;
-  const thresh = Math.min(0.7, Math.max(0.35, minBW + 0.25 * (1 - minBW)));
-  const minLen = Math.max(3, Math.round(0.15 * fs));
+  let maxBW = 0;
+  for (const v of bw) {
+    if (v < minBW) minBW = v;
+    if (v > maxBW) maxBW = v;
+  }
+  // A chest-held phone often only falls to ~0.6–0.75 g, not true zero.
+  const thresh = Math.min(0.82, Math.max(0.5, minBW + 0.3));
+  const minLen = Math.max(3, Math.round(0.16 * fs));
   const maxLen = Math.round(0.85 * fs);
+  const spikeN = Math.max(2, Math.round(0.12 * fs));
   const windows = [];
   let start = -1;
   const close = (end) => {
     if (start < 0) return;
     const len = end - start;
     if (len >= minLen && len <= maxLen) {
-      windows.push({ start, end, flightS: len / fs });
+      let sum = 0;
+      let valley = Infinity;
+      for (let j = start; j < end; j++) {
+        sum += bw[j];
+        if (bw[j] < valley) valley = bw[j];
+      }
+      const mean = sum / len;
+      let spike = 0;
+      for (let j = Math.max(0, start - spikeN); j < start; j++) if (bw[j] > spike) spike = bw[j];
+      for (let j = end; j < Math.min(bw.length, end + spikeN); j++) if (bw[j] > spike) spike = bw[j];
+      // Need a real unloading, or a takeoff/landing spike beside the valley.
+      if (mean < 0.74 || valley < 0.62 || spike > 1.35) {
+        windows.push({ start, end, flightS: len / fs, mean, valley, spike });
+      }
     }
     start = -1;
   };
@@ -483,9 +528,37 @@ export function detectFlightWindows(bw, fs) {
   return windows;
 }
 
+/** Last moments of a trace, for on-screen cues. */
+export function liveCue(samples, kind = "cmj") {
+  const list = normalizeSamples(samples || []);
+  if (list.length < 3) return { id: "wait" };
+  const tail = list.slice(-Math.max(3, Math.min(list.length, 12)));
+  const bw = tail.map((s) => (Number.isFinite(s.bw) ? s.bw : Math.hypot(s.ax, s.ay, s.az) / G));
+  const mean = bw.reduce((a, b) => a + b, 0) / bw.length;
+  let variance = 0;
+  for (const v of bw) variance += (v - mean) ** 2;
+  const std = Math.sqrt(variance / bw.length);
+  const peak = Math.max(...bw);
+  if (kind === "ppg") return { id: "cover" };
+  if (peak > 1.55) return { id: kind === "cmj" || kind === "repeat" ? "jump" : "move" };
+  if (std < 0.12 && mean > 0.7 && mean < 1.35) return { id: "hold" };
+  return { id: "keep" };
+}
+
+export function stepSignal(samples) {
+  const norm = normalizeSamples(samples || []);
+  const mags = norm.map((s) => Math.hypot(Number(s.ax) || 0, Number(s.ay) || 0, Number(s.az) || 0));
+  const med = median(mags.filter((m) => m > 0));
+  return mags.map((m) => m - (med || 0));
+}
+
 export function analyzeRepeatedJumps(samples, opts = {}) {
   const minCount = opts.minCount ?? 3;
   if (!samples || samples.length < 15) return { ok: false, reason: "short", count: 0 };
+  if (samples.filter((s) => s?.noGravity).length > samples.length * 0.5) {
+    return { ok: false, reason: "nograv", count: 0 };
+  }
+  samples = normalizeSamples(samples);
   const series = resampleSeries(samples, sampleToBw, 100);
   let bestVar = Infinity;
   let base = 1;
@@ -527,6 +600,11 @@ export function analyzeRepeatedJumps(samples, opts = {}) {
 
 export function analyzeBalance(samples, opts = {}) {
   if (!samples || samples.length < 8) return { ok: false, reason: "short", swayRms: 0, gyroRms: 0 };
+  samples = normalizeSamples(samples);
+  const stats = samplingStats(samples);
+  if (stats.count > 20 && stats.fs > 0 && stats.fs < 12) {
+    return { ok: false, reason: "low_rate", swayRms: 0, gyroRms: 0, sampleHz: stats.fs };
+  }
   const sway = swayRms(samples);
   let foot = Boolean(opts.footTouched);
   if (!foot) {
@@ -546,8 +624,17 @@ export function analyzeBalance(samples, opts = {}) {
 
 export function analyzeSitups(samples) {
   if (!samples || samples.length < 8) return { ok: false, reason: "short", reps: 0 };
+  samples = normalizeSamples(samples);
   const fs = Math.max(5, estimateFs(samples) || 50);
-  const signal = samples.map((s) => (s.az != null ? Number(s.az) : sampleToBw(s)));
+  if (samples.length > 20 && fs < 12) return { ok: false, reason: "low_rate", reps: 0, sampleHz: fs };
+  // Magnitude, not one axis, so the phone can face the chest or the sky.
+  const signal = samples.map((s) => {
+    if (Number.isFinite(s.bw) && (s.ax == null || s.ax === 0) && (s.ay == null || s.ay === 0) && s.az == null) {
+      return s.bw;
+    }
+    const mag = Math.hypot(Number(s.ax) || 0, Number(s.ay) || 0, Number(s.az) || 0);
+    return mag > 0.05 ? mag : Number(s.az) || 0;
+  });
   const reps = countReps(signal, fs, { minIntervalS: 0.45, minProminence: 0.8 });
   return { ok: reps >= 1, reason: reps >= 1 ? null : "small", reps, sampleHz: fs };
 }

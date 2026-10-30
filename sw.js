@@ -1,4 +1,4 @@
-const CACHE = "kheltara-shell-v3";
+const CACHE = "kheltara-shell-v4";
 const SHELL = [
   "./",
   "./index.html",
@@ -16,6 +16,8 @@ const SHELL = [
   "./js/audio.js",
   "./js/motion.js",
   "./js/ppg.js",
+  "./js/conditions.js",
+  "./js/demos.js",
   "./js/vendor/qrcode.js",
   "./locales/en.json",
   "./locales/hi.json",
