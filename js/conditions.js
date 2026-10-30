@@ -31,6 +31,18 @@ export function heatIndexC(tempC, rh) {
   return Math.round(c * 10) / 10;
 }
 
+/** City once, then district and state only when they are different names. */
+export function placeLabel(area) {
+  const parts = [];
+  for (const bit of [area?.city, area?.district, area?.state]) {
+    const name = String(bit || "").trim();
+    if (!name) continue;
+    if (parts.some((part) => part.toLowerCase() === name.toLowerCase())) continue;
+    parts.push(name);
+  }
+  return parts.join(", ");
+}
+
 export function publicArea(raw) {
   const out = {};
   for (const key of AREA_KEYS) {
@@ -66,11 +78,15 @@ export async function lookupArea(lat, lon) {
   const tempC = current.temperature_2m;
   const humidity = current.relative_humidity_2m;
   const city = place.city || place.locality || "";
-  const district = place.locality && place.locality !== city ? place.locality : place.localityInfo?.administrative?.[2]?.name || "";
+  const rawDistrict = place.locality && place.locality !== city ? place.locality : place.localityInfo?.administrative?.[2]?.name || "";
+  const rawState = place.principalSubdivision || "";
+  const same = (a, b) => String(a || "").trim().toLowerCase() === String(b || "").trim().toLowerCase();
+  const district = rawDistrict && !same(rawDistrict, city) && !same(rawDistrict, rawState) ? rawDistrict : "";
+  const state = rawState && !same(rawState, city) ? rawState : "";
   return publicArea({
     city,
     district,
-    state: place.principalSubdivision || "",
+    state,
     tempC,
     humidity,
     feelsC: current.apparent_temperature,

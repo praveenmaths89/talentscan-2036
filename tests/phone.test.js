@@ -7,6 +7,7 @@ import {
   analyzeRepeatedJumps,
   analyzeSitups,
   detectFlightWindows,
+  detectTakeoffLanding,
   jumpHeightCmFromFlightTime,
   liveCue,
   normalizeSamples,
@@ -27,6 +28,37 @@ function axesOnly(samples, map) {
     return { t: next.t, ax: next.ax, ay: next.ay, az: next.az, gx: next.gx, gy: next.gy, gz: next.gz };
   });
 }
+
+test("iPhone and Android chest jumps are detected from magnitude", () => {
+  const iphone = [];
+  const fs = 60;
+  for (let i = 0; i < fs * 2; i++) {
+    const t = i / fs;
+    let g = 1;
+    if (t > 0.8 && t < 0.95) g = 2.1;
+    else if (t >= 0.95 && t < 1.35) g = 0.35;
+    else if (t >= 1.35 && t < 1.5) g = 3.1;
+    iphone.push({ t, ax: 0.2, ay: -0.1, az: g * G, gx: 1, gy: 0, gz: 0 });
+  }
+  const soft = [];
+  for (let i = 0; i < 50 * 2; i++) {
+    const t = i / 50;
+    let g = 1;
+    if (t > 0.7 && t < 0.85) g = 1.7;
+    else if (t >= 0.85 && t < 1.2) g = 0.72;
+    else if (t >= 1.2 && t < 1.35) g = 2.4;
+    soft.push({ t, ax: 0, ay: g * G, az: 0.4, gx: 0, gy: 0, gz: 0 });
+  }
+  const iphoneBw = iphone.map((s) => Math.hypot(s.ax, s.ay, s.az) / G);
+  assert.ok(detectTakeoffLanding(iphoneBw, 60));
+  const found = analyzeCmjSamples(iphone, { massKg: 55 });
+  assert.equal(found.ok, true, found.reason);
+  assert.ok(found.jumpHeightCm > 8, `height ${found.jumpHeightCm}`);
+  const softFound = analyzeCmjSamples(soft, { massKg: 55 });
+  assert.equal(softFound.ok, true, softFound.reason);
+  const androidG = soft.map((s) => ({ ...s, ax: 0, ay: 0, az: Math.hypot(s.ax, s.ay, s.az) / G }));
+  assert.equal(analyzeCmjSamples(androidG, { massKg: 55 }).ok, true);
+});
 
 test("g-unit and sideways phone traces still find a jump", () => {
   const base = synthesizeCmjSamples(0.42, 50);
@@ -158,6 +190,8 @@ test("balance still rejects a hard foot-down on a normalised trace", () => {
   for (let i = 0; i < 40; i++) samples.push({ t: i / 50, ax: 0.1, ay: 0, az: G, gx: 0, gy: 0, gz: 0 });
   assert.equal(analyzeBalance(samples).ok, true);
   samples[20] = { ...samples[20], az: 30 };
+  assert.equal(analyzeBalance(samples).ok, true);
+  for (let i = 8; i < 14; i++) samples[i] = { ...samples[i], az: 28 };
   assert.equal(analyzeBalance(samples).reason, "foot");
   const jumps = analyzeRepeatedJumps(synthesizeCmjSamples(0.3).concat(synthesizeCmjSamples(0.28)));
   assert.equal(typeof jumps.count, "number");

@@ -1,12 +1,12 @@
 /** Eighth Schedule languages plus English. RTL: Urdu and Kashmiri. */
 export const LOCALES = [
-  { code: "en", name: "English", native: "English", dir: "ltr" },
+  { code: "en", name: "English", native: "English", dir: "ltr", ready: true },
   { code: "as", name: "Assamese", native: "অসমীয়া", dir: "ltr" },
   { code: "bn", name: "Bengali", native: "বাংলা", dir: "ltr" },
   { code: "brx", name: "Bodo", native: "बड़ो", dir: "ltr" },
   { code: "doi", name: "Dogri", native: "डोगरी", dir: "ltr" },
   { code: "gu", name: "Gujarati", native: "ગુજરાતી", dir: "ltr" },
-  { code: "hi", name: "Hindi", native: "हिन्दी", dir: "ltr" },
+  { code: "hi", name: "Hindi", native: "हिन्दी", dir: "ltr", ready: true },
   { code: "kn", name: "Kannada", native: "ಕನ್ನಡ", dir: "ltr" },
   { code: "ks", name: "Kashmiri", native: "کٲشُر", dir: "rtl" },
   { code: "kok", name: "Konkani", native: "कोंकणी", dir: "ltr" },

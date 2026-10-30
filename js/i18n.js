@@ -16,15 +16,21 @@ export async function ensurePack(code) {
   return packs[code];
 }
 
+/** Unfinished packs stay left-to-right so English does not flip. */
+export function pageDir(meta) {
+  if (meta?.complete === true && meta?.dir === "rtl") return "rtl";
+  return "ltr";
+}
+
 export async function setLocale(code) {
   await ensurePack("en");
   const safe = localeByCode(code).code;
   await ensurePack(safe);
   current = safe;
-  const dir = packs[safe]?.meta?.dir || localeByCode(safe).dir;
+  const dir = pageDir(packs[safe]?.meta);
   if (typeof document !== "undefined") {
     document.documentElement.lang = safe;
-    document.documentElement.dir = dir === "rtl" ? "rtl" : "ltr";
+    document.documentElement.dir = dir;
   }
   return safe;
 }

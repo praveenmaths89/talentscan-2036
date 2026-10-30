@@ -137,7 +137,7 @@ export function tapSummary(count, seconds = 10, sample = false) {
   const per10 = seconds > 0 ? (taps * 10) / seconds : taps;
   return {
     ok: taps >= 5,
-    reason: taps >= 5 ? null : "small",
+    reason: taps >= 5 ? null : "taps",
     sample,
     taps,
     tapsPer10s: per10,
@@ -192,6 +192,27 @@ export function summarizeAttempts(values, pick = "max") {
   if (pick === "max") value = Math.max(...nums);
   if (pick === "min") value = Math.min(...nums);
   return { value, mean, consistent, spread, count: nums.length, unreliable: !consistent };
+}
+
+/** Missing heart rate does not turn a good step count into Retry. */
+export function stepQuality(stepsOk, heartOk) {
+  const ok = Boolean(stepsOk);
+  return {
+    quality: ok ? "good" : "retry",
+    consistent: ok,
+    unreliable: !ok,
+    heartSkipped: !heartOk
+  };
+}
+
+export function shouldHoldStage(stage, piece) {
+  if (!piece || piece.ok) return false;
+  if (stage?.kind === "ppg") return false;
+  return true;
+}
+
+export function retriesCapped(retries) {
+  return Number(retries) >= 2;
 }
 
 export function qualityOf(result) {

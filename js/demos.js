@@ -64,8 +64,11 @@ export function stepMarkup(id, n) {
 }
 
 export function videoMarkup(id) {
-  return `<video class="demo-video" autoplay muted loop playsinline poster="">
-    <source src="./assets/demos/${id}.webm" type="video/webm" />
-    <source src="./assets/demos/${id}.mp4" type="video/mp4" />
-  </video>`;
+  const src = `./assets/demos/${id}.mp4`;
+  const poster = `./assets/demos/${id}.jpg`;
+  return `<div class="demo-stage">
+    ${demoMarkup(id)}
+    <img class="demo-poster" src="${poster}" alt="" />
+    <video class="demo-video" src="${src}" autoplay muted loop playsinline webkit-playsinline x5-playsinline disablepictureinpicture poster="${poster}" preload="metadata"></video>
+  </div>`;
 }
