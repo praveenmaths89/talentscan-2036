@@ -43,6 +43,16 @@ export function blankState() {
   };
 }
 
+/** Mid-check reload. A finished test (index past the last stage) is not reopened. */
+export function resumeTarget(state, stageCount) {
+  const saved = state?.inProgress?.resume;
+  if (!saved?.id) return null;
+  const index = Number(saved.index) || 0;
+  const total = Number(stageCount);
+  if (Number.isFinite(total) && index >= total) return null;
+  return { id: saved.id, index, parts: Array.isArray(saved.parts) ? saved.parts : [] };
+}
+
 export function canStartBattery(user) {
   if (!user || !user.name) return false;
   const age = Number(user.age);

@@ -71,6 +71,7 @@ export function scoreVoice(voice, locale) {
   else if (lang.startsWith(`${base}-`) || lang === base) score += 45;
   else return -1;
   if (name.includes("google")) score += 35;
+  if (name.includes("samsung")) score += 28;
   if (name.includes("neural") || name.includes("natural") || name.includes("wavenet")) score += 30;
   if (name.includes("enhanced") || name.includes("premium")) score += 24;
   if (name.includes("compact") || name.includes("espeak") || name.includes("eloquence")) score -= 25;
@@ -119,53 +120,60 @@ async function ensureVoice(locale) {
   return chosen;
 }
 
-export function speak(text, locale = "en") {
+let cueToken = 0;
+const CLIP_LOCALES = new Set(["en", "hi"]);
+
+export function hasVoiceClip(locale) {
+  const code = String(locale || "").toLowerCase().split("-")[0];
+  return CLIP_LOCALES.has(code);
+}
+
+/** A pause from the next cue is not a missing file. */
+export function clipFailureShouldSpeak(err) {
+  if (!err) return false;
+  if (err.name === "AbortError" || err.aborted) return false;
+  return true;
+}
+
+/** Call from the button tap, before any await, so iOS allows later speech. */
+export function unlockVoice() {
   try {
-    if (!voiceOn || !text || typeof window === "undefined" || !("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utter = new SpeechSynthesisUtterance(String(text).replace(/\[BEEP\]/g, ""));
-    utter.lang = SPEECH_LANG[locale] || locale;
-    utter.rate = 0.9;
-    utter.pitch = 1;
-    if (chosen && scoreVoice(chosen, locale) > 0) utter.voice = chosen;
-    else ensureVoice(locale).then((voice) => {
-      if (voice) chosen = voice;
-    });
-    window.speechSynthesis.speak(utter);
+    const ctx = context();
+    if (ctx) {
+      const buffer = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(ctx.destination);
+      src.start(0);
+    }
   } catch {
-    /* speech is optional */
+    /* ignore */
+  }
+  try {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      const primer = new SpeechSynthesisUtterance(" ");
+      primer.volume = 0;
+      primer.rate = 2;
+      window.speechSynthesis.speak(primer);
+    }
+    if (typeof Audio !== "undefined") {
+      const warm = new Audio("./assets/voice/en/count-3.mp3");
+      warm.muted = true;
+      const played = warm.play();
+      if (played) played.then(() => warm.pause()).catch(() => {});
+    }
+  } catch {
+    /* ignore */
   }
 }
 
-export function speakClip(locale, clipId, text) {
-  if (!voiceOn) return;
-  const key = `${locale}/${clipId}`;
-  if (clipId && !missingClips.has(key) && typeof Audio !== "undefined") {
-    try {
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio = null;
-      }
-      const audio = new Audio(`./assets/voice/${locale}/${clipId}.mp3`);
-      currentAudio = audio;
-      audio.onerror = () => {
-        missingClips.add(key);
-        if (currentAudio === audio) currentAudio = null;
-        speak(text, locale);
-      };
-      audio.play().catch(() => {
-        missingClips.add(key);
-        speak(text, locale);
-      });
-      return;
-    } catch {
-      missingClips.add(key);
-    }
-  }
-  speak(text, locale);
+export function takeCueToken() {
+  stopSpeak();
+  return cueToken;
 }
 
 export function stopSpeak() {
+  cueToken += 1;
   try {
     if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
     if (currentAudio) {
@@ -175,6 +183,129 @@ export function stopSpeak() {
   } catch {
     /* ignore */
   }
+}
+
+export function speak(text, locale = "en") {
+  const token = ++cueToken;
+  return playCue(token, locale, "", text);
+}
+
+export function speakClip(locale, clipId, text) {
+  const token = ++cueToken;
+  return playCue(token, locale, clipId, text);
+}
+
+/** One ordered line. Later calls cancel anything still playing. */
+export function playCue(token, locale, clipId, text) {
+  if (!voiceOn) return Promise.resolve(false);
+  return playOne(token, locale, clipId, text);
+}
+
+function playOne(token, locale, clipId, text) {
+  if (token !== cueToken) return Promise.resolve(false);
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  const key = `${locale}/${clipId}`;
+  if (clipId && hasVoiceClip(locale) && !missingClips.has(key) && typeof Audio !== "undefined") {
+    return playFile(token, `./assets/voice/${locale}/${clipId}.mp3`).then(
+      (ok) => ok === true,
+      (err) => {
+        if (!clipFailureShouldSpeak(err)) return false;
+        missingClips.add(key);
+        return playUtterance(token, text, locale);
+      }
+    );
+  }
+  return playUtterance(token, text, locale);
+}
+
+function playFile(token, url) {
+  return new Promise((resolve, reject) => {
+    if (token !== cueToken) return resolve(false);
+    if (currentAudio) {
+      currentAudio.pause();
+      currentAudio = null;
+    }
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.preload = "auto";
+    let settled = false;
+    const succeed = () => {
+      if (settled) return;
+      settled = true;
+      if (currentAudio === audio) currentAudio = null;
+      resolve(true);
+    };
+    const fail = (err) => {
+      if (settled) return;
+      settled = true;
+      if (currentAudio === audio) currentAudio = null;
+      reject(err || new Error("clip"));
+    };
+    audio.onended = succeed;
+    audio.onerror = () => fail(Object.assign(new Error("missing"), { missing: true }));
+    const played = audio.play();
+    if (played && played.catch) {
+      played.catch((err) => {
+        if (err?.name === "AbortError") {
+          if (settled) return;
+          settled = true;
+          if (currentAudio === audio) currentAudio = null;
+          resolve(false);
+          return;
+        }
+        fail(err);
+      });
+    }
+    // Let a short countdown word finish. Do not pause it early.
+    setTimeout(succeed, 2400);
+  });
+}
+
+function playUtterance(token, text, locale) {
+  return new Promise((resolve) => {
+    if (!text || typeof window === "undefined" || !window.speechSynthesis) return resolve(false);
+    const utter = new SpeechSynthesisUtterance(String(text).replace(/\[BEEP\]/g, ""));
+    utter.lang = SPEECH_LANG[locale] || locale;
+    utter.rate = 0.9;
+    utter.pitch = 1;
+    if (chosen && scoreVoice(chosen, locale) > 0) utter.voice = chosen;
+    else ensureVoice(locale);
+    let settled = false;
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve(token === cueToken);
+    };
+    // iOS and Android Chrome drop speech spoken in the same turn as cancel().
+    // Android also pauses the queue until resume() is called again.
+    window.speechSynthesis.cancel();
+    const kick = setInterval(() => {
+      try {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+      } catch {
+        /* the queue can already be gone */
+      }
+    }, 4000);
+    const done = () => {
+      clearInterval(kick);
+      finish();
+    };
+    utter.onend = done;
+    utter.onerror = done;
+    setTimeout(() => {
+      if (token !== cueToken) return done();
+      try {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        window.speechSynthesis.speak(utter);
+      } catch {
+        done();
+      }
+    }, 80);
+    setTimeout(done, 2500);
+  });
 }
 
 loadVoices().then((voices) => {

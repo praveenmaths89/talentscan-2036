@@ -176,6 +176,60 @@ export function mirwaldMaturityOffset(person) {
   );
 }
 
+function seriesStd(values) {
+  if (!values?.length) return 0;
+  let mean = 0;
+  for (const value of values) mean += value;
+  mean /= values.length;
+  let variance = 0;
+  for (const value of values) variance += (value - mean) ** 2;
+  return Math.sqrt(variance / values.length);
+}
+
+/**
+ * Loudest 0.4 s of standing time before the push.
+ * The crouch itself is not "the phone moved before the jump".
+ */
+export function stillnessBeforeTakeoff(values, fs, takeoffIndex) {
+  const list = values || [];
+  const rate = Math.max(1, Number(fs) || 1);
+  const win = Math.max(5, Math.round(rate * 0.4));
+  const end = Math.max(0, Math.min(list.length, Number(takeoffIndex) - Math.round(rate * 0.35)));
+  if (end < 5) return seriesStd(list.slice(0, Math.max(5, Math.min(list.length, Number(takeoffIndex) || list.length))));
+  if (end <= win) return seriesStd(list.slice(0, end));
+  let worst = 0;
+  const step = Math.max(1, Math.round(rate * 0.1));
+  for (let start = 0; start + win <= end; start += step) {
+    const sd = seriesStd(list.slice(start, start + win));
+    if (sd > worst) worst = sd;
+  }
+  return worst;
+}
+
+function sampleMagnitude(sample) {
+  return Math.hypot(Number(sample?.ax) || 0, Number(sample?.ay) || 0, Number(sample?.az) || 0);
+}
+
+/** A footfall is a short run of samples, not one Chromium outlier. */
+export function footfall(samples) {
+  const mags = [];
+  for (const sample of samples || []) {
+    if (sample?.missing) continue;
+    mags.push(sampleMagnitude(sample));
+  }
+  if (mags.length < 8) return false;
+  const sorted = mags.slice().sort((a, b) => a - b);
+  const baseline = sorted[Math.floor(sorted.length / 2)] || 0;
+  let run = 0;
+  for (const mag of mags) {
+    if (Math.abs(mag - baseline) > 6) {
+      run += 1;
+      if (run >= 4) return true;
+    } else run = 0;
+  }
+  return false;
+}
+
 export function qcCmj({ flightS, sampleHz, stillStd, flightGyroRms }) {
   const errors = [];
   const warnings = [];
@@ -406,12 +460,12 @@ export function analyzeCmjSamples(samples, athlete = {}) {
     let variance = 0;
     for (let i = start; i < start + win; i++) variance += (rawImuBW[i] - mean) ** 2;
     variance /= win;
-    if (variance < bestVar && mean > 0.4) {
+    // Only a quiet window near 1 g is standing. Flight is also quiet, and must not become the baseline.
+    if (variance < bestVar && mean > 0.75 && mean < 1.35) {
       bestVar = variance;
       baseBW = mean;
     }
   }
-  const stillStd = Math.sqrt(bestVar) / Math.max(0.4, baseBW);
   const scale = Math.max(0.4, baseBW);
   for (let i = 0; i < N; i++) rawImuBW[i] /= scale;
   const vgrfBW = rawImuBW.slice();
@@ -438,15 +492,27 @@ export function analyzeCmjSamples(samples, athlete = {}) {
     tTakeoff = t[Math.min(N - 1, best.start)];
     tLanding = t[Math.min(N - 1, best.end)];
     flightTime = tLanding - tTakeoff;
-    detected = flightTime >= 0.2 && flightTime <= 0.85;
+    detected = flightTime >= 0.18 && flightTime <= 0.85;
   }
   if (!detected) {
+    const pattern = detectTakeoffLanding(rawImuBW, fs);
+    if (pattern) {
+      tTakeoff = t[Math.min(N - 1, pattern.start)];
+      tLanding = t[Math.min(N - 1, pattern.end)];
+      flightTime = Math.max(0.18, tLanding - tTakeoff);
+      detected = flightTime >= 0.18 && flightTime <= 0.85;
+    }
+  }
+  if (!detected) {
+    const restless = stillnessBeforeTakeoff(rawImuBW, fs, N);
+    const reason = restless > 0.45 ? "shake" : "unclear";
     return {
       ok: false,
-      reason: "unclear",
+      reason,
       detected: false,
       sampleHz: series.sampleHz,
-      qc: { pass: false, errors: ["unclear"] }
+      stillStd: restless,
+      qc: { pass: false, errors: [reason] }
     };
   }
 
@@ -461,6 +527,8 @@ export function analyzeCmjSamples(samples, athlete = {}) {
     { t0, tBrake, tProp, tTakeoff, tLanding, flightTime },
     athlete
   );
+  const iTake = Math.max(0, t.findIndex((time) => time >= tTakeoff));
+  const stillStd = stillnessBeforeTakeoff(rawImuBW, fs, iTake < 0 ? N : iTake);
   const flightGyroRms = gyroRmsDuring(samples, Number(samples[0].t) || 0, tTakeoff, tLanding);
   const qc = qcCmj({
     flightS: flightTime,
@@ -481,6 +549,50 @@ export function analyzeCmjSamples(samples, athlete = {}) {
     pinn: kin.metrics,
     vTakeoffTarget: kin.vTakeoffTarget
   };
+}
+
+/**
+ * Takeoff is a sharp drop after a push. Landing is the next spike.
+ * Primary: push above 1.5 g, valley below 0.5 g, landing above 1.5 g.
+ * Fallback: a smaller drop that still has a push and a landing spike.
+ */
+export function detectTakeoffLanding(bw, fs) {
+  if (!bw?.length || !(fs > 0)) return null;
+  return (
+    findJumpPattern(bw, fs, { push: 1.5, drop: 0.5, land: 1.5, minFlight: 0.15 }) ||
+    findJumpPattern(bw, fs, { push: 1.25, drop: 0.8, land: 1.3, minFlight: 0.16, fromPeak: 0.7 })
+  );
+}
+
+function findJumpPattern(bw, fs, opts) {
+  const minFlight = Math.max(3, Math.round(opts.minFlight * fs));
+  const maxFlight = Math.round(0.85 * fs);
+  const look = Math.round(0.5 * fs);
+  for (let i = 1; i < bw.length - minFlight; i++) {
+    if (bw[i] < opts.push || bw[i] < bw[i - 1]) continue;
+    const searchEnd = Math.min(bw.length - 1, i + look);
+    let dropAt = -1;
+    for (let j = i + 1; j <= searchEnd; j++) {
+      const fell = bw[j] < opts.drop;
+      const fromPeak = opts.fromPeak && bw[i] - bw[j] >= opts.fromPeak && bw[j] < 0.95;
+      if (fell || fromPeak) {
+        dropAt = j;
+        break;
+      }
+    }
+    if (dropAt < 0) continue;
+    let end = dropAt;
+    const ceiling = opts.drop + 0.2;
+    while (end < bw.length && bw[end] < ceiling) end++;
+    const flight = end - dropAt;
+    if (flight < minFlight || flight > maxFlight) continue;
+    let spike = 0;
+    const spikeEnd = Math.min(bw.length, end + Math.round(0.25 * fs));
+    for (let s = Math.max(end - 1, dropAt); s < spikeEnd; s++) if (bw[s] > spike) spike = bw[s];
+    if (spike < opts.land) continue;
+    return { start: dropAt, end, flightS: flight / fs, spike, push: bw[i] };
+  }
+  return null;
 }
 
 export function detectFlightWindows(bw, fs) {
@@ -571,7 +683,7 @@ export function analyzeRepeatedJumps(samples, opts = {}) {
       let variance = 0;
       for (let i = start; i < start + win; i++) variance += (series.v[i] - mean) ** 2;
       variance /= win;
-      if (variance < bestVar && mean > 0.4) {
+      if (variance < bestVar && mean > 0.75 && mean < 1.35) {
         bestVar = variance;
         base = mean;
       }
@@ -607,11 +719,7 @@ export function analyzeBalance(samples, opts = {}) {
   }
   const sway = swayRms(samples);
   let foot = Boolean(opts.footTouched);
-  if (!foot) {
-    const mags = samples.map((s) => Math.hypot(Number(s.ax) || 0, Number(s.ay) || 0, Number(s.az) || 0));
-    const mean = mags.reduce((a, b) => a + b, 0) / mags.length;
-    foot = mags.some((m) => Math.abs(m - mean) > 8);
-  }
+  if (!foot) foot = footfall(samples);
   return {
     ok: !foot,
     reason: foot ? "foot" : null,
@@ -683,7 +791,7 @@ export function detectMovementOnset(samples, beepT, delta = 0.35) {
 }
 
 export function sprintResult({ beepT, finishT, onsetT, gpsDistanceM, gpsAccuracyM }) {
-  if (!(Number(finishT) > Number(beepT))) return { ok: false, reason: "unclear" };
+  if (!(Number(finishT) > Number(beepT))) return { ok: false, reason: "sprint" };
   const timeS = Number(finishT) - Number(beepT);
   const reactionS = onsetT == null ? null : Number(onsetT) - Number(beepT);
   const gpsOk =
@@ -693,7 +801,7 @@ export function sprintResult({ beepT, finishT, onsetT, gpsDistanceM, gpsAccuracy
   const ok = timeS >= 2.5 && timeS <= 20;
   return {
     ok,
-    reason: ok ? null : "unclear",
+    reason: ok ? null : "sprint",
     timeS,
     reactionS,
     gpsDistanceM: Number.isFinite(gpsDistanceM) ? gpsDistanceM : null,
@@ -703,10 +811,10 @@ export function sprintResult({ beepT, finishT, onsetT, gpsDistanceM, gpsAccuracy
 
 export function shuttleResult(turnTimes, beepT) {
   const turns = (turnTimes || []).map(Number).filter((t) => t > beepT).slice(0, 4);
-  if (turns.length < 4) return { ok: false, reason: "unclear", turns: turns.length };
+  if (turns.length < 4) return { ok: false, reason: "shuttle", turns: turns.length };
   const timeS = turns[3] - Number(beepT);
   const ok = timeS >= 4 && timeS <= 40;
-  return { ok, reason: ok ? null : "unclear", timeS, turns: 4 };
+  return { ok, reason: ok ? null : "shuttle", timeS, turns: 4 };
 }
 
 const STATE_FACTORS = {

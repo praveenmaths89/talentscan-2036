@@ -1,7 +1,7 @@
 {
   "name": "KhelTara",
   "short_name": "KhelTara",
-  "description": "KhelTara is a free 5-minute phone screening for sporting talent. Referral, not selection. Norms are provisional.",
+  "description": "KhelTara is a free phone screening for sporting talent. Referral, not selection. Norms are provisional.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

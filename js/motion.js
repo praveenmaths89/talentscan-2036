@@ -21,22 +21,38 @@ export function sensorSupport() {
  * iOS Safari only shows the motion prompt from a user gesture.
  * Call this directly inside the tap handler, before any other await.
  */
+/**
+ * iOS must grant motion. Android Chrome and Samsung Internet have no prompt;
+ * a failing orientation check must not block the jump.
+ */
+export async function resolveMotionPermission(motionAsk, orientationAsk) {
+  if (typeof motionAsk === "function") {
+    try {
+      const result = await motionAsk();
+      if (result === "denied") return "denied";
+    } catch {
+      return "denied";
+    }
+  }
+  if (typeof orientationAsk === "function") {
+    try {
+      await orientationAsk();
+    } catch {
+      /* Samsung and some Android WebViews reject this and still send motion */
+    }
+  }
+  return "granted";
+}
+
 export async function requestMotionPermission() {
   const support = sensorSupport();
   if (!support.secure) return "insecure";
   if (support.kind === "none") return "unavailable";
-  const asks = [];
   const DME = typeof DeviceMotionEvent !== "undefined" ? DeviceMotionEvent : null;
   const DOE = typeof DeviceOrientationEvent !== "undefined" ? DeviceOrientationEvent : null;
-  if (DME && typeof DME.requestPermission === "function") asks.push(DME.requestPermission());
-  if (DOE && typeof DOE.requestPermission === "function") asks.push(DOE.requestPermission());
-  if (!asks.length) return "granted";
-  try {
-    const results = await Promise.all(asks);
-    return results.includes("denied") ? "denied" : "granted";
-  } catch {
-    return "denied";
-  }
+  const motionAsk = DME && typeof DME.requestPermission === "function" ? () => DME.requestPermission() : null;
+  const orientationAsk = DOE && typeof DOE.requestPermission === "function" ? () => DOE.requestPermission() : null;
+  return resolveMotionPermission(motionAsk, orientationAsk);
 }
 
 function finiteOrNull(value) {
@@ -82,12 +98,12 @@ export function startMotionRecording() {
     const now = typeof performance !== "undefined" ? performance.now() : Date.now();
     samples.push(sampleFromEvent(ev, (now - start) / 1000));
   };
-  if (typeof window !== "undefined") window.addEventListener("devicemotion", handler);
+  if (typeof window !== "undefined") window.addEventListener("devicemotion", handler, { passive: true });
   return {
     samples,
     stop() {
       live = false;
-      if (typeof window !== "undefined") window.removeEventListener("devicemotion", handler);
+      if (typeof window !== "undefined") window.removeEventListener("devicemotion", handler, { passive: true });
       return samples;
     }
   };

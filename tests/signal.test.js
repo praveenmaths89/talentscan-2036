@@ -61,6 +61,8 @@ test("sway RMS of a flat signal is zero and a unit square wave is 1", () => {
   assert.ok(balance.swayRms > 0.05 && balance.swayRms < 0.5);
   const stepped = synthesizeBalance();
   stepped[10].az = 40;
+  assert.equal(analyzeBalance(stepped).ok, true);
+  for (let i = 12; i < 18; i++) stepped[i] = { ...stepped[i], az: 28 };
   assert.equal(analyzeBalance(stepped).reason, "foot");
 });
 

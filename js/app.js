@@ -13,6 +13,7 @@ import {
   markInviteQc,
   newId,
   redeemInvite,
+  resumeTarget,
   saveState,
   trySyncSession
 } from "./store.js";
@@ -37,8 +38,8 @@ import {
   tapSummary,
   visibleTests
 } from "./battery.js";
-import { beep, isVoiceOn, setVoiceOn, speak, speakClip, stopSpeak } from "./audio.js";
-import { collectArea, safetyFlags } from "./conditions.js";
+import { beep, isVoiceOn, playCue, setVoiceOn, speak, speakClip, stopSpeak, takeCueToken, unlockVoice } from "./audio.js";
+import { collectArea, placeLabel, safetyFlags } from "./conditions.js";
 import { demoMarkup, stepMarkup, videoMarkup } from "./demos.js";
 import {
   haversineMeters,
@@ -52,7 +53,20 @@ import {
 } from "./motion.js";
 import { measureHeartRate } from "./ppg.js";
 import { analyzeBalance, detectMovementOnset, liveCue, mirwaldMaturityOffset, samplingStats } from "./signal.js";
-import { qualityOf, summarizeAttempts } from "./battery.js";
+import {
+  HIGHER_BETTER,
+  RADAR_KEYS,
+  TEST_IDS,
+  dedupeSessions,
+  historyFor,
+  lineChartSvg,
+  radarScores,
+  radarSvg,
+  traceFromSamples,
+  traceSvg,
+  trendNeed
+} from "./progress.js";
+import { qualityOf, retriesCapped, shouldHoldStage, stepQuality, summarizeAttempts } from "./battery.js";
 
 const SPORTS = ["athletics", "football", "kabaddi", "kho", "hockey", "wrestling", "badminton", "cricket", "basketball", "volleyball", "swimming", "other"];
 const SCRIPT = {
@@ -112,8 +126,11 @@ const ERR = {
   lost: "err.repeat.lost",
   foot: "err.balance.foot",
   small: "err.situp.small",
+  taps: "err.tap.small",
   early: "err.rt.early",
   step: "err.step.miss",
+  sprint: "err.sprint.quick",
+  shuttle: "err.shuttle.quick",
   finger: "err.ppg.finger",
   low_rate: "qc.lowRate",
   short: "err.cmj.unclear",
@@ -146,7 +163,9 @@ const ui = {
   stuck: false,
   watch: false,
   sensorPerm: "",
-  weatherState: ""
+  weatherState: "",
+  detail: null,
+  progressFilter: "all"
 };
 
 const displayName = () => {
@@ -271,6 +290,8 @@ function render() {
     results: viewResults,
     sensors: viewSensors,
     timeline: viewTimeline,
+    detail: viewDetail,
+    howto: viewHowto,
     invite: viewInvite,
     nominate: viewNominate,
     family: viewFamily,
@@ -342,7 +363,7 @@ function weatherCard() {
         : "";
   }
   const flags = safetyFlags(db.area);
-  const place = [db.area.city, db.area.district, db.area.state].filter(Boolean).join(", ");
+  const place = placeLabel(db.area);
   return `<article class="card weather">
     <h2>${esc(t("weather.title"))}</h2>
     ${place ? `<p>${esc(place)}</p>` : ""}
@@ -438,9 +459,10 @@ function viewLanguage() {
       ${LOCALES.map((l) => {
         const on = l.code === cur;
         const suggested = l.code === (ui.suggestedLang || matchNavigator(typeof navigator !== "undefined" ? navigator.languages || [navigator.language] : []));
-        return `<button type="button" class="lang ${on ? "on" : ""}" data-act="lang" data-lang="${l.code}" lang="${l.code}" dir="${l.dir}" aria-pressed="${on}">
+        return `<button type="button" class="lang ${on ? "on" : ""}" data-act="lang" data-lang="${l.code}" lang="${l.code}" dir="ltr" aria-pressed="${on}">
           ${suggested ? `<span class="suggest">${esc(t("lang.suggested"))}</span>` : ""}
-          <span class="native">${esc(l.native)}</span><small>${esc(l.name)}</small>
+          <span class="native" dir="${l.dir === "rtl" ? "rtl" : "ltr"}">${esc(l.native)}</span><small>${esc(l.name)}</small>
+          ${l.ready ? "" : `<small>${esc(t("lang.englishNow"))}</small>`}
         </button>`;
       }).join("")}
     </div>
@@ -458,7 +480,7 @@ function viewOnboard() {
   if (step === "name") {
     body = `<label>${esc(t("onboard.name"))}<input data-field="name" value="${esc(f.name || "")}" autocomplete="nickname" required></label>`;
   } else if (step === "age") {
-    body = `<p class="script" id="live">${esc(t("c0.script"))}</p>
+    body = `<p>${esc(t("onboard.age"))}</p>
       <div class="stepper">
         <button type="button" data-act="bump" data-target="age" data-delta="-1" aria-label="-">−</button>
         <input data-field="age" inputmode="numeric" value="${esc(f.age ?? 14)}">
@@ -482,7 +504,7 @@ function viewOnboard() {
     <div class="dots">${steps.map((_, i) => `<span class="${i === ui.step ? "on" : ""}"></span>`).join("")}</div>
     ${body}
     ${ui.error ? `<p class="error" role="alert">${esc(ui.error)}</p>` : ""}
-    <button type="button" class="btn primary xl" data-act="onboard-next">${esc(t("onboard.next"))}</button></section>`,
+    <div class="sticky-cta"><button type="button" class="btn primary xl" data-act="onboard-next">${esc(t("onboard.next"))}</button></div></section>`,
     { back: true, title: t("onboard.title") }
   );
 }
@@ -500,7 +522,7 @@ function viewConsent() {
     <label>${esc(t("consent.name"))}<input data-field="guardianName" value="${esc(f.guardianName || "")}"></label>
     <label class="check"><input type="checkbox" data-field="consent" ${f.consent ? "checked" : ""}> ${esc(t("consent.check"))}</label>
     ${ui.error ? `<p class="error" role="alert">${esc(ui.error)}</p>` : ""}
-    <button type="button" class="btn primary xl" data-act="save-consent">${esc(t("consent.save"))}</button></section>`,
+    <div class="sticky-cta"><button type="button" class="btn primary xl" data-act="save-consent">${esc(t("consent.save"))}</button></div></section>`,
     { back: true, title: t("consent.title") }
   );
 }
@@ -552,7 +574,8 @@ function viewTest() {
   if (!flow) return shell(`<p>–</p>`);
   const card = flow.card || "ready";
   const stage = STAGES[flow.id][flow.index];
-  const errKey = flow.error && ERR[flow.error] ? ERR[flow.error] : "";
+  const errKey = flow.error ? reasonKey(flow.id, flow.error) : "";
+  const capped = retriesCapped(flow.retries) && flow.error;
   const air = safetyFlags(db.area).air && (flow.id === "step" || flow.id === "sprint" || flow.id === "shuttle");
   let extra = "";
   if (card === "do" && flow.rt) {
@@ -585,22 +608,25 @@ function viewTest() {
         <span class="${card === "done" ? "on" : ""}">${esc(t("test.done"))}</span>
       </div>
       ${ui.watch ? videoMarkup(flow.id) : demoMarkup(flow.id)}
-      <h1>${esc(t("tests." + flow.id))}</h1>
+      <h1 data-act="debug-tap">${esc(t("tests." + flow.id))}</h1>
+      ${ui.debug ? debugPanel() : ""}
+      ${errKey ? `<p class="error" role="alert">${esc(t(errKey))}</p>` : ""}
       ${card === "ready" ? `<p class="lead">${esc(t("coach." + flow.id))}</p>
-        <button type="button" class="btn primary xl" data-act="run-stage">${esc(flow.error ? t("test.tryAgain") : primaryLabel(flow))}</button>
+        ${capped
+          ? `<button type="button" class="btn primary xl" data-act="skip-test">${esc(t("test.skip"))}</button>`
+          : `<button type="button" class="btn primary xl" data-act="run-stage">${esc(flow.error ? t("test.tryAgain") : primaryLabel(flow))}</button>`}
         <button type="button" class="btn ghost" data-act="watch-demo">${esc(ui.watch ? t("demo.hide") : t("demo.watch"))}</button>
         <ol class="steps">${steps}</ol>` : ""}
       ${card === "do" ? `<p class="cue" id="cue">${esc(flow.cue || t("live.wait"))}</p>` : ""}
       ${stageHint(flow, stage) ? `<p class="kicker">${esc(stageHint(flow, stage))}</p>` : ""}
       <p class="safety">${esc(t(SCRIPT[flow.id][3]))}</p>
       ${air ? `<p class="warn">${esc(t("weather.air"))}</p>` : ""}
-      ${errKey ? `<p class="error" role="alert">${esc(t(errKey))}</p>` : ""}
       ${extra}
       <p class="count" id="count">${card === "do" && flow.count ? esc(String(flow.count)) : ""}</p>
       ${card === "ready" ? `
         <button type="button" class="btn ghost" data-act="use-sample">${esc(t("test.example"))}</button>
         <p class="note">${esc(t("test.sample.sub"))}</p>
-        ${motionPermissionKind() === "ios" ? `<p class="note">${esc(t("test.ios"))}</p>` : ""}
+        ${motionPermissionKind() === "ios" ? `<p class="note">${esc(t("test.ios"))}</p>` : `<p class="note">${esc(t("test.android"))}</p>`}
         ${sensorSupport().kind === "none" ? `<p class="note">${esc(t("err.sensor.none"))}</p>` : ""}
         ${flow.id === "balance" ? `<button type="button" class="btn ghost" data-act="foot">${esc(t("test.foot"))}</button>` : ""}
       ` : ""}
@@ -649,7 +675,7 @@ function metricHtml(id, result) {
     .map((r) => `<li><span>${esc(r[0])}</span><strong>${esc(r[1])} ${esc(r[2] || "")}</strong></li>`)
     .join("")}</ul>${
     result.unreliable ? `<p class="warn">${esc(t("results.unreliable"))}</p>` : ""
-  }${
+  }${result.heartSkipped ? `<p class="note">${esc(t("heart.skipped"))}</p>` : ""}${
     pct ? `<p class="pct">${esc(t("results.percentile", { n: pct.percentile }))}</p><p class="disclaimer">${esc(t("results.disclaimer"))}</p>` : ""
   }`;
 }
@@ -736,7 +762,7 @@ function viewResults() {
       <div class="disclaimer box">${esc(t("results.disclaimer"))}</div>
       ${session.hasSample ? `<p class="note">${esc(t("results.sampleNote"))}</p>` : ""}
       ${mature}
-      ${session.conditions ? `<article class="card"><h2>${esc(t("weather.title"))}</h2><p>${esc([session.conditions.city, session.conditions.district, session.conditions.state].filter(Boolean).join(", "))}</p><p class="note">${esc(t("results.conditions"))}</p><p>${esc(t("weather.temp"))} ${esc(fmt(session.conditions.tempC, 0))}° · ${esc(t("weather.humid"))} ${esc(fmt(session.conditions.humidity, 0))}% · ${esc(t("weather.aqi"))} ${session.conditions.aqi == null ? "–" : esc(fmt(session.conditions.aqi, 0))}</p></article>` : ""}
+      ${session.conditions ? `<article class="card"><h2>${esc(t("weather.title"))}</h2><p>${esc(placeLabel(session.conditions))}</p><p class="note">${esc(t("results.conditions"))}</p><p>${esc(t("weather.temp"))} ${esc(fmt(session.conditions.tempC, 0))}° · ${esc(t("weather.humid"))} ${esc(fmt(session.conditions.humidity, 0))}% · ${esc(t("weather.aqi"))} ${session.conditions.aqi == null ? "–" : esc(fmt(session.conditions.aqi, 0))}</p></article>` : ""}
       ${blocks || `<p>${esc(t("results.empty"))}</p>`}
       <p>${esc(t("results.referral"))}</p>
       <p><strong>${esc(t("results.notSelection"))}</strong></p>
@@ -749,29 +775,111 @@ function viewResults() {
 
 function viewTimeline() {
   const who = user();
-  const rows = db.sessions.filter((s) => s.athleteId === who?.id);
-  const points = rows
+  const rows = dedupeSessions(db.sessions.filter((s) => s.athleteId === who?.id));
+  const filter = ui.progressFilter || "all";
+  const ids = filter === "all" ? TEST_IDS : [filter];
+  const chips = ["all"].concat(TEST_IDS).map((id) => {
+    const label = id === "all" ? t("progress.all") : t("tests." + id);
+    return `<button type="button" class="chip ${filter === id ? "on" : ""}" data-act="progress-filter" data-test="${id}">${esc(label)}</button>`;
+  }).join("");
+  const blocks = ids.map((id) => historyBlock(rows, id)).join("");
+  const real = rows
+    .filter((s) => !s.practiceSession)
     .slice()
-    .reverse()
-    .map((s) => s.tests?.cmj?.jumpHeightCm)
-    .filter((n) => Number.isFinite(n));
+    .sort((a, b) => String(a.completedAt).localeCompare(String(b.completedAt)));
+  const first = real[0];
+  const latest = real[real.length - 1];
+  const radar = first && latest ? labeledRadar(first, latest) : `<p class="note">${esc(t("progress.need", { n: trendNeed(real.length) }))}</p>`;
   return shell(
-    `<section data-screen="timeline"><h1>${esc(t("timeline.title"))}</h1>
-    ${spark(points)}
-    ${
-      rows.length
-        ? `<ul class="metrics">${rows
-            .map((s) => {
-              const jump = s.tests?.cmj?.jumpHeightCm;
-              const when = new Date(s.completedAt).toLocaleDateString();
-              return `<li><span>${esc(when)}</span><strong>${jump ? esc(fmt(jump, 1) + " " + t("unit.cm")) : "✓"}</strong></li>`;
-            })
-            .join("")}</ul>`
-        : `<p>${esc(t("timeline.empty"))}</p>`
-    }
-    <p class="disclaimer">${esc(t("results.disclaimer"))}</p></section>`,
+    `<section data-screen="timeline">
+      <h1>${esc(t("timeline.title"))}</h1>
+      <div class="chips">${chips}</div>
+      ${rows.length ? "" : `<p>${esc(t("progress.need", { n: 2 }))}</p><button type="button" class="btn primary xl" data-act="start">${esc(t("home.start"))}</button>`}
+      <h2>${esc(t("progress.radar"))}</h2>
+      <p class="note">${esc(t("progress.radar.sub"))}</p>
+      ${radar}
+      ${blocks || (rows.length ? `<p class="note">${esc(t("progress.need", { n: 2 }))}</p>` : "")}
+      <p class="disclaimer">${esc(t("results.disclaimer"))}</p>
+    </section>`,
     { back: true, title: t("nav.progress") }
   );
+}
+
+function labeledRadar(first, latest) {
+  let svg = radarSvg(radarScores(first), radarScores(latest));
+  for (const key of RADAR_KEYS) svg = svg.replace(`>${key}<`, `>${esc(t("progress." + key))}<`);
+  return `<div class="plot-card">${svg}<p class="note">${esc(t("progress.first"))} · ${esc(t("progress.latest"))}</p></div>`;
+}
+
+function historyBlock(rows, id) {
+  const points = historyFor(rows, id);
+  if (!points.length) return "";
+  const higher = HIGHER_BETTER[id];
+  const need = trendNeed(points.length);
+  const chart = points.length >= 2 ? lineChartSvg(points, higher) : "";
+  const rowsHtml = points
+    .slice()
+    .reverse()
+    .map((point) => `<li><button type="button" data-act="open-detail" data-test="${id}" data-session="${point.sessionId}"><span>${esc(String(point.date).slice(0, 10))}</span><strong>${esc(fmt(point.value, id === "balance" ? 3 : 1))}</strong></button></li>`)
+    .join("");
+  return `<article class="card"><h2>${esc(t("tests." + id))}</h2>
+    ${need ? `<p class="note">${esc(t("progress.need", { n: need }))}</p>` : chart}
+    <ul class="metrics history-rows">${rowsHtml}</ul>
+  </article>`;
+}
+
+function viewDetail() {
+  const found = findDetail();
+  if (!found) {
+    return shell(`<section data-screen="detail"><h1>${esc(t("detail.title"))}</h1><p>${esc(t("progress.need", { n: 2 }))}</p><button type="button" class="btn primary" data-act="goto" data-to="timeline">${esc(t("timeline.title"))}</button></section>`, { back: true });
+  }
+  const { id, result } = found;
+  const pct = result.percentile?.percentile ?? result.reaction?.percentile?.percentile;
+  const marks = (result.trace?.marks || [])
+    .map((mark) => `${esc(t("trace." + mark.name))}: ${esc(Number(mark.t).toFixed(2))}s`)
+    .join(" · ");
+  return shell(
+    `<section data-screen="detail">
+      <h1>${esc(t("tests." + id))}</h1>
+      ${metricHtml(id, result)}
+      ${marks ? `<p class="note">${marks}</p>` : ""}
+      ${pct == null ? "" : `<div class="gauge" style="--p:${pct}"><span>${esc(String(pct))}</span></div>`}
+      <h2>${esc(t("progress.what"))}</h2>
+      <p>${esc(t("mean." + id))}</p>
+      <h2>${esc(t("progress.improve"))}</h2>
+      <p>${esc(t("tip." + id))}</p>
+      <h2>${esc(t("progress.trace"))}</h2>
+      <div class="plot-card">${traceSvg(result.trace) || `<p class="note">${esc(t("progress.notrace"))}</p>`}</div>
+      <button type="button" class="btn ghost" data-act="open-how" data-test="${id}">${esc(t("how.open"))}</button>
+      <button type="button" class="btn ghost" data-act="hear-detail">${esc(t("how.hear"))}</button>
+    </section>`,
+    { back: true }
+  );
+}
+
+function viewHowto() {
+  const id = ui.detail?.test || "cmj";
+  return shell(
+    `<section data-screen="howto">
+      <h1>${esc(t("tests." + id))}</h1>
+      <p class="kicker">${esc(t("how.title"))}</p>
+      <h2>${esc(t("how.what"))}</h2><p>${esc(t("how." + id + ".what"))}</p>
+      <h2>${esc(t("how.science"))}</h2><p>${esc(t("how." + id + ".science"))}</p>
+      <h2>${esc(t("how.sensor"))}</h2><p>${esc(t("how." + id + ".sensor"))}</p>
+      <h2>${esc(t("how.limit"))}</h2><p>${esc(t("how." + id + ".limit"))}</p>
+      <button type="button" class="btn primary" data-act="hear-how">${esc(t("how.hear"))}</button>
+    </section>`,
+    { back: true }
+  );
+}
+
+function findDetail() {
+  const id = ui.detail?.test;
+  if (!id) return null;
+  const rows = dedupeSessions(db.sessions);
+  const session = rows.find((s) => s.id === ui.detail.session) || rows.find((s) => s.tests?.[id]);
+  if (!session?.tests?.[id]) return null;
+  return { id, result: session.tests[id], session };
 }
 
 function spark(values) {
@@ -925,6 +1033,7 @@ function viewProfile() {
 }
 
 function onPointerDown(event) {
+  startDemoVideo();
   const btn = event.target.closest("[data-act='rt-pad'], [data-act='tap']");
   if (!btn) return;
   event.preventDefault();
@@ -964,7 +1073,14 @@ function onClick(event) {
   if (act === "watch-demo") {
     ui.watch = !ui.watch;
     ui.stuck = false;
-    return render();
+    render();
+    return startDemoVideo();
+  }
+  if (act === "debug-tap") {
+    ui.debugTaps = (ui.debugTaps || 0) + 1;
+    if (ui.debugTaps >= 5) ui.debug = true;
+    if (ui.debug) render();
+    return;
   }
   if (act === "sensors") {
     ui.stuck = false;
@@ -1021,6 +1137,26 @@ function onClick(event) {
   }
   if (act === "save-consent") return saveConsent();
   if (act === "open-test") return openTest(btn.dataset.id);
+  if (act === "progress-filter") {
+    ui.progressFilter = btn.dataset.test || "all";
+    return render();
+  }
+  if (act === "open-detail") {
+    ui.detail = { test: btn.dataset.test, session: btn.dataset.session };
+    return go("detail");
+  }
+  if (act === "open-how") {
+    ui.detail = { ...(ui.detail || {}), test: btn.dataset.test || ui.detail?.test };
+    return go("howto");
+  }
+  if (act === "hear-detail") {
+    const id = ui.detail?.test || "cmj";
+    return speak(`${t("mean." + id)} ${t("tip." + id)}`, currentLocale());
+  }
+  if (act === "hear-how") {
+    const id = ui.detail?.test || "cmj";
+    return speak([t("how." + id + ".what"), t("how." + id + ".science"), t("how." + id + ".sensor"), t("how." + id + ".limit")].join(" "), currentLocale());
+  }
   if (act === "run-stage") return runStage(false);
   if (act === "use-sample") return useSample();
   if (act === "skip-practice") return skipPractice();
@@ -1183,7 +1319,7 @@ function openTest(id) {
   if (!visibleTests().includes(id) && !(ENABLE_OUTDOOR_TESTS && (id === "sprint" || id === "shuttle"))) return;
   cancelRun();
   stopSensorPreview();
-  const saved = db.inProgress?.resume;
+  const saved = resumeTarget(db, STAGES[id]?.length);
   if (saved && saved.id === id && saved.index > 0) {
     ui.flow = { id, index: saved.index, card: "ready", parts: saved.parts || [], error: "", result: null, taps: 0, turns: 0, retries: 0 };
   } else {
@@ -1194,7 +1330,7 @@ function openTest(id) {
   history.pushState({ screen: "test" }, "", `${location.pathname}${location.search}#/test`);
   ensureDraft();
   db.inProgress.testId = id;
-  persist();
+  rememberFlow();
   render();
   speakClip(currentLocale(), `coach-${id}`, t(`coach.${id}`));
 }
@@ -1291,10 +1427,95 @@ function gateSamples(samples) {
   return null;
 }
 
-function sayFix(reason) {
-  const key = ERR[reason] || "err.cmj.unclear";
+function startDemoVideo() {
+  const video = document.querySelector("video.demo-video");
+  if (!video) return;
+  video.muted = true;
+  video.defaultMuted = true;
+  video.playsInline = true;
+  video.setAttribute("playsinline", "");
+  video.setAttribute("webkit-playsinline", "");
+  video.setAttribute("x5-playsinline", "");
+  video.loop = true;
+  if (!video.getAttribute("src") && video.querySelector("source")) video.src = video.querySelector("source").src;
+  const hide = () => video.classList.add("failed");
+  video.addEventListener("error", hide);
+  const poster = video.parentElement?.querySelector(".demo-poster");
+  if (poster) poster.addEventListener("error", () => poster.classList.add("off"));
+  const played = video.play();
+  if (played && played.catch) {
+    played.catch((err) => {
+      if (err && err.name === "NotAllowedError") return;
+      hide();
+    });
+  }
+}
+
+function debugPanel() {
+  const samples = ui.debugSamples || [];
+  const stats = samplingStats(samples);
+  const mags = samples.filter((s) => !s.missing).map((s) => {
+    const mag = Math.hypot(Number(s.ax) || 0, Number(s.ay) || 0, Number(s.az) || 0);
+    return mag > 4 ? mag / 9.80665 : mag;
+  });
+  const min = mags.length ? Math.min(...mags) : 0;
+  const max = mags.length ? Math.max(...mags) : 0;
+  const head = samples
+    .slice(0, 8)
+    .map((s) => `${Number(s.t).toFixed(2)}  ${Number(s.ax).toFixed(2)}, ${Number(s.ay).toFixed(2)}, ${Number(s.az).toFixed(2)}`)
+    .join("\n");
+  const text = `n ${samples.length}\nfs ${Number(stats.fs).toFixed(1)}\nnoGravity ${stats.noGravity}\nmin g ${min.toFixed(2)}\nmax g ${max.toFixed(2)}\n${head}`;
+  return `<pre class="debug-log">${esc(text)}</pre>`;
+}
+
+function reasonKey(testId, reason) {
+  let code = reason || "unclear";
+  if ((testId === "sprint" || testId === "shuttle") && (code === "unclear" || code === "short" || code === "flat")) code = testId;
+  if ((testId === "react" || testId === "tap") && code === "small") code = "taps";
+  return ERR[code] || (testId === "sprint" ? ERR.sprint : testId === "shuttle" ? ERR.shuttle : "err.cmj.unclear");
+}
+
+function sayFix(testId, reason) {
+  const key = reasonKey(testId, reason);
   speakClip(currentLocale(), "try-again", `${t("coach.try")} ${t(key)}`);
 }
+
+function paceStage(stage) {
+  if (!stage?.seconds) return stage;
+  let fast = false;
+  try {
+    fast = new URLSearchParams(location.search).has("fast");
+  } catch {
+    fast = false;
+  }
+  if (fast && stage.seconds >= 4) {
+    const seconds = stage.kind === "steps" && stage.id === "trial" ? 4 : stage.kind === "repeat" ? 3.2 : 2.5;
+    return { ...stage, seconds: Math.min(stage.seconds, seconds) };
+  }
+  return stage;
+}
+
+function restoreResume() {
+  const saved = db.inProgress?.resume;
+  const count = STAGES[saved?.id]?.length;
+  const target = resumeTarget(db, count);
+  if (!target || !user()) return false;
+  ui.flow = {
+    id: target.id,
+    index: target.index,
+    card: "ready",
+    parts: target.parts,
+    error: "",
+    result: null,
+    taps: 0,
+    turns: 0,
+    retries: 0
+  };
+  ui.screen = "test";
+  return true;
+}
+
+let prerollRec = null;
 
 async function runStage(fromSample) {
   const flow = ui.flow;
@@ -1304,51 +1525,55 @@ async function runStage(fromSample) {
   const stage = STAGES[flow.id][flow.index];
   if (!stage) return;
   flow.error = "";
+  unlockVoice();
   try {
     if (!fromSample && needsMotion(stage)) {
-      const perm = await requestMotionPermission();
+      const permPromise = requestMotionPermission();
+      const perm = await permPromise;
       if (perm !== "granted") {
         flow.error = perm === "denied" ? "denied" : perm === "insecure" ? "insecure" : perm === "unavailable" ? "unavailable" : "sensor";
         flow.card = "ready";
         render();
-        sayFix(flow.error);
+        sayFix(flow.id, flow.error);
         return;
       }
       await holdScreenAwake();
+      prerollRec = startMotionRecording();
     }
-    if (stage.kind !== "ppg" && stage.kind !== "rt" && stage.kind !== "tap") await countdown(token, stage.kind);
+    const paced = paceStage(stage);
+    if (paced.kind !== "ppg" && paced.kind !== "rt" && paced.kind !== "tap") await countdown(token, paced.kind);
     else if (stage.kind !== "ppg") {
       flow.card = "do";
       render();
     }
     if (token !== ui.runToken) return;
     let piece = null;
-    if (stage.kind === "cmj") piece = await captureCmj(stage, token);
-    else if (stage.kind === "repeat") piece = await captureRepeat(stage, token);
-    else if (stage.kind === "balance") piece = await captureBalance(stage, token);
-    else if (stage.kind === "situp") piece = await captureSitup(stage, token);
-    else if (stage.kind === "steps") piece = await captureSteps(stage, token);
-    else if (stage.kind === "ppg") piece = await capturePpg(stage, token);
-    else if (stage.kind === "rt") piece = await captureRt(stage, token);
-    else if (stage.kind === "tap") piece = await captureTap(stage, token);
-    else if (stage.kind === "sprint") piece = await captureSprint(token);
-    else if (stage.kind === "shuttle") piece = await captureShuttle(token);
+    if (paced.kind === "cmj") piece = await captureCmj(paced, token);
+    else if (paced.kind === "repeat") piece = await captureRepeat(paced, token);
+    else if (paced.kind === "balance") piece = await captureBalance(paced, token);
+    else if (paced.kind === "situp") piece = await captureSitup(paced, token);
+    else if (paced.kind === "steps") piece = await captureSteps(paced, token);
+    else if (paced.kind === "ppg") piece = await capturePpg(paced, token);
+    else if (paced.kind === "rt") piece = await captureRt(paced, token);
+    else if (paced.kind === "tap") piece = await captureTap(paced, token);
+    else if (paced.kind === "sprint") piece = await captureSprint(token);
+    else if (paced.kind === "shuttle") piece = await captureShuttle(token);
     if (token !== ui.runToken || !piece) return;
     piece.stage = stage.id;
-    const blocking = !isPractice(stage);
-    if (!piece.ok && blocking && stage.kind !== "ppg") {
+    if (shouldHoldStage(stage, piece)) {
       flow.retries = (flow.retries || 0) + 1;
       flow.error = piece.reason || "unclear";
       flow.card = "ready";
+      flow.count = "";
       render();
-      sayFix(flow.error);
+      sayFix(flow.id, flow.error);
       return;
     }
     flow.retries = 0;
     if (!piece.ok && stage.kind === "ppg") {
       flow.parts.push({ ...piece, stage: stage.id, bpm: null, skippedHeart: true });
       flow.error = piece.reason || "finger";
-      sayFix("finger");
+      sayFix(flow.id, "finger");
     } else flow.parts.push(piece);
     flow.index += 1;
     rememberFlow();
@@ -1359,44 +1584,52 @@ async function runStage(fromSample) {
     speakClip(currentLocale(), "rest", t("coach.rest"));
   } catch (error) {
     if (error?.message !== "cancel") {
-      flow.error = "unclear";
+      flow.error = flow.id === "sprint" || flow.id === "shuttle" ? flow.id : "unclear";
       flow.card = "ready";
+      flow.count = "";
       render();
-      sayFix("unclear");
+      sayFix(flow.id, flow.error);
     }
   }
 }
 
 async function countdown(token, kind) {
+  const locale = currentLocale();
+  const voice = takeCueToken();
   ui.flow.card = "do";
-  ui.flow.count = 3;
+  ui.flow.count = "";
   ui.flow.cue = t("live.hold");
   render();
-  speakClip(currentLocale(), "hold-still", t("live.hold"));
-  const clips = { 3: "count-3", 2: "count-2", 1: "count-1" };
+  await playCue(voice, locale, "hold-still", t("live.hold"));
+  if (token !== ui.runToken) throw new Error("cancel");
   for (const n of [3, 2, 1]) {
     if (token !== ui.runToken) throw new Error("cancel");
-    const el = document.getElementById("count");
-    if (el) el.textContent = String(n);
-    speakClip(currentLocale(), clips[n], String(n));
-    beep(n === 1 ? 880 : 620, 130);
-    await sleep(700);
+    ui.flow.count = n;
+    ui.flow.cue = String(n);
+    const count = document.getElementById("count");
+    if (count) count.textContent = String(n);
+    const cue = document.getElementById("cue");
+    if (cue) cue.textContent = String(n);
+    beep(n === 1 ? 880 : 620, 90);
+    await playCue(voice, locale, `count-${n}`, String(n));
   }
-  beep(990, 220);
+  if (token !== ui.runToken) throw new Error("cancel");
   const goCue = kind === "cmj" || kind === "repeat" ? t("live.jump") : t("live.keep");
   ui.flow.cue = goCue;
+  ui.flow.count = t("coach.go");
   const cue = document.getElementById("cue");
   if (cue) cue.textContent = goCue;
-  const el = document.getElementById("count");
-  if (el) el.textContent = t("coach.go");
-  speakClip(currentLocale(), kind === "cmj" || kind === "repeat" ? "jump-now" : "go", goCue);
+  const count = document.getElementById("count");
+  if (count) count.textContent = t("coach.go");
+  beep(990, 160);
+  await playCue(voice, locale, kind === "cmj" || kind === "repeat" ? "jump-now" : "go", goCue);
 }
 
 async function recordSeconds(seconds, token, kind) {
-  const rec = startMotionRecording();
+  const rec = prerollRec || startMotionRecording();
+  prerollRec = null;
   ui.flow.rec = rec;
   const start = performance.now();
-  let spoken = "";
   const timer = setInterval(() => {
     const left = Math.max(0, seconds - (performance.now() - start) / 1000);
     const count = document.getElementById("count");
@@ -1412,17 +1645,13 @@ async function recordSeconds(seconds, token, kind) {
     const label = cue.id === "landed" ? t("live.landed", { s: "" }) : t(`live.${cue.id}`);
     const cueEl = document.getElementById("cue");
     if (cueEl && label) cueEl.textContent = label;
-    if (cue.id !== spoken && (cue.id === "hold" || cue.id === "jump" || cue.id === "keep")) {
-      spoken = cue.id;
-      const clip = cue.id === "jump" ? "jump-now" : cue.id === "hold" ? "hold-still" : "keep-going";
-      speakClip(currentLocale(), clip, t(`live.${cue.id}`));
-    }
   }, 250);
   ui.cancelers.push(() => clearInterval(timer));
   await sleep(seconds * 1000);
   clearInterval(timer);
   if (token !== ui.runToken) throw new Error("cancel");
-  return rec.stop();
+  ui.debugSamples = rec.stop();
+  return ui.debugSamples;
 }
 
 async function captureCmj(stage, token) {
@@ -1436,26 +1665,29 @@ async function captureCmj(stage, token) {
     if (cue) cue.textContent = line;
     speak(line, currentLocale());
   }
-  return { ...raw, stage: stage.id };
+  return { ...raw, trace: traceFromSamples("cmj", samples, raw), stage: stage.id };
 }
 async function captureRepeat(stage, token) {
   const samples = await recordSeconds(stage.seconds, token, "repeat");
   const gate = gateSamples(samples);
   if (gate) return gate;
-  return liveRepeat(samples);
+  const raw = liveRepeat(samples);
+  return { ...raw, trace: traceFromSamples("repeat", samples, raw) };
 }
 async function captureBalance(stage, token) {
   ui.flow.foot = false;
   const samples = await recordSeconds(stage.seconds, token, "balance");
   const gate = gateSamples(samples);
   if (gate) return gate;
-  return { ...analyzeBalance(samples, { footTouched: ui.flow.foot }), leg: stage.id };
+  const raw = { ...analyzeBalance(samples, { footTouched: ui.flow.foot }), leg: stage.id };
+  return { ...raw, trace: traceFromSamples("balance", samples, raw) };
 }
 async function captureSitup(stage, token) {
   const samples = await recordSeconds(stage.seconds, token, "situp");
   const gate = gateSamples(samples);
   if (gate) return gate;
-  return liveSitup(samples);
+  const raw = liveSitup(samples);
+  return { ...raw, trace: traceFromSamples("situp", samples, raw) };
 }
 async function captureSteps(stage, token) {
   const metro = setInterval(() => {
@@ -1529,6 +1761,7 @@ async function captureTap(stage, token) {
 async function captureSprint(token) {
   const beepT = performance.now() / 1000;
   ui.flow.card = "do";
+  ui.flow.count = t("coach.go");
   render();
   const rec = startMotionRecording();
   ui.flow.rec = rec;
@@ -1564,6 +1797,7 @@ async function captureSprint(token) {
 async function captureShuttle(token) {
   ui.flow.card = "do";
   ui.flow.turns = 0;
+  ui.flow.count = t("coach.go");
   render();
   const beepT = performance.now();
   const turns = [];
@@ -1668,10 +1902,17 @@ function useSample() {
   speak(t(SCRIPT[id][2]), currentLocale());
 }
 
+function carryTrace(id, result, parts) {
+  if (!result) return result;
+  const pool = (parts || []).filter((p) => p?.trace);
+  const chosen = pool[pool.length - 1];
+  return chosen?.trace ? { ...result, trace: result.trace || chosen.trace } : result;
+}
+
 function finishFlow() {
   const flow = ui.flow;
   const id = flow.id;
-  const result = combineParts(id, flow.parts);
+  const result = carryTrace(id, combineParts(id, flow.parts), flow.parts);
   flow.result = result;
   flow.card = "done";
   if (db.inProgress) db.inProgress.resume = null;
@@ -1750,6 +1991,7 @@ function combineParts(id, parts) {
     const pre = parts.find((p) => p.stage === "ppg1");
     const post = parts.find((p) => p.stage === "ppg2");
     const heart = Boolean(pre?.bpm && post?.bpm);
+    const rated = stepQuality(steps.ok, heart);
     return {
       ok: Boolean(steps.ok),
       sample: false,
@@ -1759,9 +2001,7 @@ function combineParts(id, parts) {
       percentileKey: steps.ok ? "steps" : null,
       percentileValue: steps.steps || 0,
       reason: steps.reason || null,
-      consistent: heart,
-      unreliable: !heart,
-      quality: steps.ok && heart ? "good" : "retry"
+      ...rated
     };
   }
   if (id === "sprint" || id === "shuttle") {
@@ -1820,8 +2060,7 @@ function seeCard(practice) {
     qcPassed: CORE_TESTS.some((id) => tests[id]?.ok && !tests[id].sample),
     conditions: db.area ? { ...db.area } : null
   };
-  db.sessions.unshift(session);
-  db.sessions = db.sessions.slice(0, 50);
+  db.sessions = dedupeSessions([session, ...db.sessions]).slice(0, 50);
   db.inProgress = null;
   ui.lastSessionId = session.id;
   persist();
@@ -2102,7 +2341,9 @@ async function boot() {
   rootStyle.setProperty("--primary", THEME.primary);
   rootStyle.setProperty("--bg", THEME.background);
   rootStyle.setProperty("--accent", THEME.accent);
-  if (db.askedLang && location.hash.startsWith("#/") && location.hash !== "#/test") {
+  if (db.askedLang && restoreResume()) {
+    history.replaceState({ screen: "test" }, "", `${location.pathname}${location.search}#/test`);
+  } else if (db.askedLang && location.hash.startsWith("#/") && location.hash !== "#/test") {
     ui.screen = location.hash.slice(2);
   }
   document.body.addEventListener("click", onClick);
@@ -2111,8 +2352,10 @@ async function boot() {
   document.body.addEventListener("input", onInput);
   window.addEventListener("popstate", () => {
     const next = (location.hash || "#/home").replace("#/", "") || "home";
-    ui.screen = next === "test" ? "battery" : next;
     cancelRun();
+    if (next === "test") {
+      if (!restoreResume()) ui.screen = "battery";
+    } else ui.screen = next;
     if (ui.screen !== "sensors") stopSensorPreview();
     render();
   });
