@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "ml",
+    "name": "Malayalam",
+    "nativeName": "മലയാളം",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

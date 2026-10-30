@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "mr",
+    "name": "Marathi",
+    "nativeName": "मराठी",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

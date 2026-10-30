@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "kok",
+    "name": "Konkani",
+    "nativeName": "कोंकणी",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

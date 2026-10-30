@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "sat",
+    "name": "Santali",
+    "nativeName": "ᱥᱟᱱᱛᱟᱲᱤ",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

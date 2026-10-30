@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "sa",
+    "name": "Sanskrit",
+    "nativeName": "संस्कृतम्",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "ne",
+    "name": "Nepali",
+    "nativeName": "नेपाली",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

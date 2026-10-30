@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "ur",
+    "name": "Urdu",
+    "nativeName": "اردو",
+    "dir": "rtl",
+    "complete": false,
+    "fallback": "en"
+  }
+}

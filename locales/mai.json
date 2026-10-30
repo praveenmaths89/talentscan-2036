@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "mai",
+    "name": "Maithili",
+    "nativeName": "मैथिली",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

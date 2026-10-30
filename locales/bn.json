@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "bn",
+    "name": "Bengali",
+    "nativeName": "বাংলা",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

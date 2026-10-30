@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "ks",
+    "name": "Kashmiri",
+    "nativeName": "کٲشُر",
+    "dir": "rtl",
+    "complete": false,
+    "fallback": "en"
+  }
+}

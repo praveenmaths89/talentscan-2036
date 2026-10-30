@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "as",
+    "name": "Assamese",
+    "nativeName": "অসমীয়া",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}

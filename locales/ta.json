@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "code": "ta",
+    "name": "Tamil",
+    "nativeName": "தமிழ்",
+    "dir": "ltr",
+    "complete": false,
+    "fallback": "en"
+  }
+}
